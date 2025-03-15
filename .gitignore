@@ -1,0 +1,13 @@
+# Ignore virtual environment
+venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Django specific
+*.log
+db.sqlite3
+
+# Other
+.env
