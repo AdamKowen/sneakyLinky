@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Sneaky Linky</string>
+    <string name="accessibility_service_description">Link Interceptor Service</string>
+</resources>
