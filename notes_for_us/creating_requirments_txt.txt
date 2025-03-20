@@ -7,5 +7,3 @@ cd .\backend\
 # 3. Generate the requirements.txt file from your active venv
 pip freeze > requirements.txt
 
-# 4. (Optional) Move the requirements.txt file to the main project directory
-move requirements.txt ..\
