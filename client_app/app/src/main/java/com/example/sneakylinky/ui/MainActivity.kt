@@ -6,6 +6,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.viewpager2.widget.ViewPager2
 import com.example.sneakylinky.R
 import com.example.sneakylinky.service.RetrofitClient
 import com.example.sneakylinky.service.MyAccessibilityService
@@ -23,16 +24,20 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // connects to the accesbility service
-        MyAccessibilityService.setActivity(this)
+        val viewPager = findViewById<ViewPager2>(R.id.viewPager)
+        viewPager.adapter = CardAdapter()
 
-        editTextUrl = findViewById(R.id.editTextUrl)
-        checkButton = findViewById(R.id.checkButton)
+        // אפקט שמראה את הכרטיס הבא מבצבץ
+        viewPager.offscreenPageLimit = 3
+        val pageMargin = resources.getDimensionPixelOffset(R.dimen.pageMargin)
+        val pageOffset = resources.getDimensionPixelOffset(R.dimen.offset)
 
-        checkButton.setOnClickListener {
-            val url = editTextUrl.text.toString()
-            if (url.isNotEmpty()) {
-                checkUrl(url)
+        viewPager.setPageTransformer { page, position ->
+            val offset = position * -(2 * pageOffset + pageMargin)
+            if (viewPager.orientation == ViewPager2.ORIENTATION_HORIZONTAL) {
+                page.translationX = offset
+            } else {
+                page.translationY = offset
             }
         }
     }

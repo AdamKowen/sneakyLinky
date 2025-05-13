@@ -1,24 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp">
+    android:background="@color/backgroundPurple"
+    tools:context=".ui.MainActivity">
 
-    <EditText
-        android:id="@+id/editTextUrl"
-        android:hint="Enter URL"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="textUri" />
-
-    <Button
-        android:id="@+id/checkButton"
-        android:text="Check"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"/>
-</LinearLayout>
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:clipChildren="false"
+        android:paddingStart="40dp"
+        android:paddingEnd="40dp"
+        android:overScrollMode="never"/>
+</androidx.constraintlayout.widget.ConstraintLayout>
