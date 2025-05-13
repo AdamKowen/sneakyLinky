@@ -24,7 +24,15 @@ object RetrofitClient {
     }
 }
 
+data class Details(
+    val safe: Int, // num of scanners that found safe
+    val unrated: Int, // num not rated
+    val total: Int // total of scanners
+)
+
 data class ApiResponse(
-    val status: String,
-    val message: String
+    val status: String, // safe or not safe
+    val message: String,
+    val permalink: String, // the full link for detection
+    val details: Details
 )

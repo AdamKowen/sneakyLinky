@@ -13,14 +13,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var editTextUrl: EditText
     private lateinit var checkButton: Button
 
-    // משתמש בשירות האמיתי דרך RetrofitClient
+    // uses retrofit service
     private val apiService = RetrofitClient.apiService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // מחבר את האקטיביטי לשירות הנגישות (Accessibility Service)
+        // connects to the accesbility service
         MyAccessibilityService.setActivity(this)
 
         editTextUrl = findViewById(R.id.editTextUrl)
@@ -39,15 +39,20 @@ class MainActivity : AppCompatActivity() {
             try {
                 val response = apiService.checkUrl(mapOf("url" to url))
                 if (response.status == "safe") {
-                    Toast.makeText(this@MainActivity, "Safe link! ${response.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity,
+                        "Safe link!\n${response.message}\nSafe: ${response.details.safe}/${response.details.total}\nMore info: ${response.permalink}",
+                        Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(this@MainActivity, "Unsafe link! ${response.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity,
+                        "Unsafe link!\n${response.message}",
+                        Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
 
 
     fun updateLink(link: String) {

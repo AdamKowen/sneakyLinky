@@ -30,27 +30,27 @@ class MyAccessibilityService : AccessibilityService() {
     private fun scanNodeTree(node: AccessibilityNodeInfo?) {
         if (node == null) return
 
-        // עובר על כל הצאצאים של ה־node
+        // all of the nodes
         for (i in 0 until node.childCount) {
             val child = node.getChild(i)
             if (child != null) {
-                // מחפש טקסט שמכיל לינק
+                // looks for node with text for link
                 if (child.text != null && child.text.contains("http")) {
                     val link = child.text.toString()
                     Log.d("MyAccessibilityService", "Link found in node tree: $link")
 
-                    // מעדכן את ה-TextBox באקטיביטי
+                    // updates the text box
                     activityRef?.get()?.updateLink(link)
                     return
                 }
-                // ממשיך בסריקה ברקורסיה
+                // keep checking recurcively
                 scanNodeTree(child)
             }
         }
     }
 
 
-    // 🔎 פונקציה רקורסיבית לחיפוש לינק בתוך ה־AccessibilityNodeInfo
+    // looks for link in AccessibilityNodeInfo
     private fun findLinkInNode(node: AccessibilityNodeInfo): String? {
         if (node.text != null && node.text.toString().contains("http")) {
             return node.text.toString()
