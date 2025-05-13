@@ -1,15 +1,26 @@
+# ─── Android Studio / IntelliJ ────────────────────────────────────────────
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+/.idea/                     # IDE settings & run-configs
+
+# ─── Gradle caches & outputs ───────────────────────────────────────────────
+.gradle/                    # Gradle's working cache
+/build/                     # root build output
+**/build/                   # module-level build outputs
+
+# Android Studio extras
+/captures/                  # screen recordings
+.externalNativeBuild/       # CMake / NDK intermediates
+.cxx/                       # NDK build caches
+
+# local.properties (SDK paths, keystore configs…)
 local.properties
+
+# ─── OS ────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── But keep the Gradle wrapper so everyone shares the same Gradle version ─
+!gradlew
+!gradlew.bat
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
