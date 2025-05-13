@@ -24,7 +24,9 @@ staticfiles/                # collected static assets
 .idea/                      # IntelliJ/Android Studio project files
 *.iml                       # IntelliJ module files
 .vscode/                    # VSCode workspace
+**/.idea/                   # IntelliJ/AndroidStudio (root & any nested .idea)
 
 # ─── OS ────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+*.zip                       # zips, zips of data, etc.
