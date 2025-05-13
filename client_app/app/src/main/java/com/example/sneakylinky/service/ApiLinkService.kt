@@ -1,4 +1,4 @@
-package com.example.sneakylinky
+package com.example.sneakylinky.service
 
 import retrofit2.http.Body
 import retrofit2.http.POST

@@ -1,8 +1,9 @@
-package com.example.sneakylinky
+package com.example.sneakylinky.service
 import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import com.example.sneakylinky.ui.MainActivity
 import java.lang.ref.WeakReference
 
 class MyAccessibilityService : AccessibilityService() {

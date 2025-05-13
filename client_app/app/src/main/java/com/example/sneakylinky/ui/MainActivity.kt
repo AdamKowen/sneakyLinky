@@ -1,4 +1,4 @@
-package com.example.sneakylinky
+package com.example.sneakylinky.ui
 
 import android.os.Bundle
 import android.widget.Button
@@ -6,6 +6,9 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.example.sneakylinky.R
+import com.example.sneakylinky.service.RetrofitClient
+import com.example.sneakylinky.service.MyAccessibilityService
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -52,6 +55,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+
 
 
     fun updateLink(link: String) {
