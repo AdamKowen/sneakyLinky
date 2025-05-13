@@ -1,21 +1,23 @@
 # ─── Android Studio / IntelliJ ────────────────────────────────────────────
 *.iml
-/.idea/                     # IDE settings & run-configs
+/.idea/                   
+/**/.idea/                
 
 # ─── Gradle caches & outputs ───────────────────────────────────────────────
-.gradle/                    # Gradle's working cache
-/build/                     # root build output
-**/build/                   # module-level build outputs
+/.gradle/                  
+/**/.gradle/               
+/build/                    
+/**/build/                 
 
-# Android Studio extras
-/captures/                  # screen recordings
-.externalNativeBuild/       # CMake / NDK intermediates
-.cxx/                       # NDK build caches
+# ─── Android Studio extras ────────────────────────────────────────────────
+/captures/
+/.externalNativeBuild/
+/.cxx/
 
-# local.properties (SDK paths, keystore configs…)
-local.properties
+# ─── Local SDK settings ────────────────────────────────────────────────────
+/local.properties        
 
-# ─── OS ────────────────────────────────────────────────────────────────────
+# ─── OS cruft ──────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 

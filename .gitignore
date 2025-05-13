@@ -1,7 +1,7 @@
 # ─── Python / Django ────────────────────────────────────────────────────────
-venv/                       # your virtualenv
-__pycache__/                # cache dirs
-*.py[cod]                   # compiled python files
+venv/                      
+__pycache__/               
+*.py[cod]                  
 *.pyo
 *.pyd
 
@@ -11,22 +11,22 @@ dist/
 *.egg-info/
 
 # Django
-*.log                       # log files
-db.sqlite3                  # local dev database
-media/                      # uploaded files
-staticfiles/                # collected static assets
+*.log                      
+db.sqlite3                 
+media/                     
+staticfiles/               
 
 # environment variables
 .env
 .env.*.local
 
 # ─── IDE / Editor ──────────────────────────────────────────────────────────
-.idea/                      # IntelliJ/Android Studio project files
-*.iml                       # IntelliJ module files
-.vscode/                    # VSCode workspace
-**/.idea/                   # IntelliJ/AndroidStudio (root & any nested .idea)
+/.idea/                    
+*.iml                      
+.vscode/                   
+**/.idea/                  
 
 # ─── OS ────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
-*.zip                       # zips, zips of data, etc.
+*.zip                     
