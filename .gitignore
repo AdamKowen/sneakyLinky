@@ -1,17 +1,32 @@
-# Ignore virtual environment
-venv/
+# ─── Python / Django ────────────────────────────────────────────────────────
+venv/                      
+__pycache__/               
+*.py[cod]                  
+*.pyo
+*.pyd
 
-# Python cache files
-__pycache__/
-*.py[cod]
+# packaging / builds
+build/
+dist/
+*.egg-info/
 
-# Django specific
-*.log
-db.sqlite3
+# Django
+*.log                      
+db.sqlite3                 
+media/                     
+staticfiles/               
 
-# Other
+# environment variables
 .env
-.zip
+.env.*.local
 
-# ignore all IntelliJ/IDEA project folders anywhere in the tree
-**/.idea/
+# ─── IDE / Editor ──────────────────────────────────────────────────────────
+/.idea/                    
+*.iml                      
+.vscode/                   
+**/.idea/                  
+
+# ─── OS ────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.zip                     
