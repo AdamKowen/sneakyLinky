@@ -138,7 +138,6 @@ def process_report(report):
         "details": details_dict,
     }
 
-
 @api_view(["POST"])
 def check_url(request):
     # 1. Extract and validate URL
