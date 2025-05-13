@@ -53,6 +53,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     fun updateLink(link: String) {
         runOnUiThread {
             editTextUrl.setText(link)
