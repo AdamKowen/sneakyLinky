@@ -12,4 +12,6 @@ db.sqlite3
 # Other
 .env
 .zip
-.idea/
+
+# ignore all IntelliJ/IDEA project folders anywhere in the tree
+**/.idea/
