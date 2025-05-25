@@ -3,13 +3,15 @@ package com.example.sneakylinky.ui
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.sneakylinky.R
-
+import com.example.sneakylinky.util.*
 
 
 class CardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -59,7 +61,22 @@ class CardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             }
 
             is Card2ViewHolder -> {
-                // בהמשך נכניס כאן את הקוד לרשימת דפדפנים
+                val context = holder.itemView.context
+                val browsers = getInstalledBrowsers(context)
+                val browserNames = browsers.map { it.loadLabel(context.packageManager).toString() }
+                val packageNames = browsers.map { it.activityInfo.packageName }
+
+                val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, browserNames)
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                holder.spinner.adapter = adapter
+
+
+                holder.saveButton.setOnClickListener {
+                    val selectedIndex = holder.spinner.selectedItemPosition
+                    val pkg = packageNames[selectedIndex]
+                    saveSelectedBrowser(context, pkg)
+                    Toast.makeText(context, "Saved: $pkg", Toast.LENGTH_SHORT).show()
+                }
             }
 
             is Card3ViewHolder -> {
@@ -74,7 +91,8 @@ class CardAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     }
 
     class Card2ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // דוגמה: טקסט או RecyclerView
+        val spinner: Spinner = itemView.findViewById(R.id.browserSpinner)
+        val saveButton: Button = itemView.findViewById(R.id.saveBrowserButton)
     }
 
     class Card3ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

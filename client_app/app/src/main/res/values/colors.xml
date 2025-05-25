@@ -2,10 +2,18 @@
 <resources>
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
+    <color name="purple_700">#6035F3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="backgroundPurple">#6C4AB6</color> //background color
+    <color name="near_white">#F6F6F6</color>
+<!--    <color name="backgroundPurple">#6C4AB6</color> //background color-->
+    <color name="backgroundPurple">#6137F3</color>
+    <!-- ~15% white -->
+    <color name="glass_white_15">#74FFFFFF</color>
+    <!-- ~10% white -->
+    <color name="glass_white_10">#3DFFFFFF</color>
+    <!-- ~5% white -->
+    <color name="glass_white_05">#27FFFFFF</color>
 </resources>

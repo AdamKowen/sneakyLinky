@@ -1,31 +1,51 @@
-<androidx.cardview.widget.CardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="16dp"
-    card_view:cardCornerRadius="16dp"
-    card_view:cardElevation="10dp"
-    android:background="@drawable/glass_background">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_marginStart="24dp"
+    android:layout_marginEnd="24dp"
+    android:layout_marginTop="64dp"
+    android:layout_marginBottom="64dp"
+
+    android:background="@color/backgroundPurple">
 
     <LinearLayout
         android:orientation="vertical"
-        android:padding="20dp"
+        android:padding="24dp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical">
 
+        <ImageView
+            android:id="@+id/cardImage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:scaleType="centerCrop"
+            app:srcCompat="@drawable/floating" />
+
+
+        <!-- 2. תיבת הטקסט עם טקסט לבן (או near-white) -->
         <EditText
             android:id="@+id/editTextUrl"
-            android:hint="Enter URL"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textUri" />
+            android:layout_marginTop="8dp"
+            android:hint="Enter Link Here"
+            android:textColorHint="@color/near_white"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@android:color/white"
+            android:backgroundTintMode="src_in"/>
 
+
+        <!-- 3. כפתור בדיקה -->
         <Button
             android:id="@+id/checkButton"
-            android:text="Check"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"/>
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:text="Check"
+            android:background="@drawable/rounded_button" />
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+</FrameLayout>

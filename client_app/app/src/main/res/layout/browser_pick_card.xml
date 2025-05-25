@@ -1,17 +1,38 @@
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="16dp"
-    card_view:cardCornerRadius="16dp"
-    card_view:cardElevation="10dp"
-    android:background="@drawable/glass_background">
+    android:layout_marginStart="24dp"
+    android:layout_marginEnd="24dp"
+    android:layout_marginTop="64dp"
+    android:layout_marginBottom="64dp"
+
+    android:background="@drawable/glass_background"
+    android:elevation="4dp">  <!-- צל עדין -->
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
     <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Card content"
-        android:textColor="#000"
-        android:gravity="center"
-        android:textSize="18sp"/>
-</androidx.cardview.widget.CardView>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="choose browser"
+            android:textSize="18sp"
+            android:textColor="#000"
+            android:layout_marginBottom="12dp"/>
+
+        <Spinner
+            android:id="@+id/browserSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"/>
+
+        <Button
+            android:id="@+id/saveBrowserButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="save" />
+    </LinearLayout>
+</FrameLayout>
