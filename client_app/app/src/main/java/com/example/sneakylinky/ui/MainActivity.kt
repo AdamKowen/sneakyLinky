@@ -1,5 +1,6 @@
 package com.example.sneakylinky.ui
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Resources
 import android.os.Bundle
@@ -19,29 +20,51 @@ import android.util.Log
 import kotlin.math.abs
 
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var editTextUrl: EditText
-    private lateinit var checkButton: Button
+
     val Int.dp get() = (this * Resources.getSystem().displayMetrics.density).toInt()
 
-
+    private var cardAdapter: CardAdapter? = null
 
     // uses retrofit service
     private val apiService = RetrofitClient.apiService
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
 
+//        val viewPager = findViewById<ViewPager2>(R.id.viewPager).apply {
+//            // let neighbours peek & give every page the same gutter
+//            clipToPadding = false           // keeps pages from filling the whole viewport
+//            setPadding(32.dp, 0, 32.dp, 0)  // 16 dp each side + the Card’s own 16 dp margin
+//            offscreenPageLimit = 3
+//            adapter = CardAdapter()
+//        }
+
         val viewPager = findViewById<ViewPager2>(R.id.viewPager).apply {
-            // let neighbours peek & give every page the same gutter
-            clipToPadding = false           // keeps pages from filling the whole viewport
-            setPadding(32.dp, 0, 32.dp, 0)  // 16 dp each side + the Card’s own 16 dp margin
+            clipToPadding = false // Keep false to show neighboring pages
+            // Ensure you have R.dimen.pageMargin and R.dimen.offset defined in dimens.xml
+            val pageMarginPx = resources.getDimensionPixelOffset(R.dimen.pageMargin)
+            val pageOffsetPx = resources.getDimensionPixelOffset(R.dimen.offset) // Ensure this is defined
+
+            setPadding(pageMarginPx, 0, pageMarginPx, 0)
             offscreenPageLimit = 3
-            adapter = CardAdapter()
+
+            // Initialize the adapter and pass the callback function
+            // The lambda (url -> checkUrl(url)) is the callback
+            cardAdapter = CardAdapter { url ->
+                // This is where the URL from the CardAdapter is received
+                // and the checkUrl logic (in MainActivity) is triggered.
+                checkUrl(url)
+            }
+            adapter = cardAdapter
         }
 
         // אפקט שמראה את הכרטיס הבא מבצבץ
@@ -62,10 +85,7 @@ class MainActivity : AppCompatActivity() {
             // הנוכחי תמיד למעלה
             page.translationZ = -abs(position)
         }
-        viewPager.setPageTransformer { page, position ->
-            page.translationX = position * -40.dp.toFloat()
-            page.scaleY = 0.95f + (1 - abs(position)) * 0.05f
-        }
+
 
         viewPager.apply {
             clipToPadding = false       // להשאיר false כדי שייראו את הבא מאחור
@@ -74,12 +94,17 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-
         val intentData: Uri? = intent?.data
         intentData?.let { uri ->
             val url = uri.toString()
-            // checks if link is safe and open in browser
-            launchInSelectedBrowser(this, url)
+            lifecycleScope.launch {
+                // Call the public function in CardAdapter to update the EditText
+                cardAdapter?.updateCard1Link(url)
+                Log.d("DEBUG", "Link from intent updated in CardAdapter: $url")
+                // Short delay to ensure the CardAdapter has created the first card and its EditText
+                delay(300)
+                launchInSelectedBrowser(this@MainActivity, url)
+            }
         }
 
 
@@ -109,7 +134,7 @@ class MainActivity : AppCompatActivity() {
 
     fun updateLink(link: String) {
         runOnUiThread {
-            editTextUrl.setText(link)
+            //editTextUrl.setText(link)
         }
     }
 }
