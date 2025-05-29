@@ -40,14 +40,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
 
-//        val viewPager = findViewById<ViewPager2>(R.id.viewPager).apply {
-//            // let neighbours peek & give every page the same gutter
-//            clipToPadding = false           // keeps pages from filling the whole viewport
-//            setPadding(32.dp, 0, 32.dp, 0)  // 16 dp each side + the Card’s own 16 dp margin
-//            offscreenPageLimit = 3
-//            adapter = CardAdapter()
-//        }
-
         val viewPager = findViewById<ViewPager2>(R.id.viewPager).apply {
             clipToPadding = false // Keep false to show neighboring pages
             // Ensure you have R.dimen.pageMargin and R.dimen.offset defined in dimens.xml
@@ -67,29 +59,28 @@ class MainActivity : AppCompatActivity() {
             adapter = cardAdapter
         }
 
-        // אפקט שמראה את הכרטיס הבא מבצבץ
+        // shows the next card from the side
         viewPager.offscreenPageLimit = 3
         val pageMargin = resources.getDimensionPixelOffset(R.dimen.pageMargin)
         val pageOffset = resources.getDimensionPixelOffset(R.dimen.offset)
 
 
 
-
         viewPager.setPageTransformer { page, position ->
-            // מרחיק קלות את הכרטיסים האחרים הצידה
+            // moves cards to the side
             page.translationX = position * -40.dp.toFloat()
 
-            // כיווץ קטן לכרטיסים מאחור
+            // shrinks the cards as they move to the side
             page.scaleY = 1f - 0.05f * abs(position)
 
-            // הנוכחי תמיד למעלה
+            // the current card is in the middle
             page.translationZ = -abs(position)
         }
 
 
         viewPager.apply {
-            clipToPadding = false       // להשאיר false כדי שייראו את הבא מאחור
-            setPadding(0, 0, 0, 0)      // לא צריך padding צדדי
+            clipToPadding = false       // false to shpw neighboring pages
+            setPadding(0, 0, 0, 0)      // no padding
             offscreenPageLimit = 3
         }
 
@@ -132,9 +123,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun updateLink(link: String) {
-        runOnUiThread {
-            //editTextUrl.setText(link)
-        }
-    }
 }

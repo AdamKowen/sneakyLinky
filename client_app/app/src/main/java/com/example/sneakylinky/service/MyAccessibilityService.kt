@@ -41,7 +41,7 @@ class MyAccessibilityService : AccessibilityService() {
                     Log.d("MyAccessibilityService", "Link found in node tree: $link")
 
                     // updates the text box
-                    activityRef?.get()?.updateLink(link)
+                    //activityRef?.get()?.updateLink(link)
                     return
                 }
                 // keep checking recurcively

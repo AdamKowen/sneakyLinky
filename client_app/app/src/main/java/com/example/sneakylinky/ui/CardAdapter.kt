@@ -34,26 +34,7 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
         else -> TYPE_CARD_3
     }
 
-//    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-//        val inflater = LayoutInflater.from(parent.context)
-//
-//        return when (viewType) {
-//            TYPE_CARD_1 -> {
-//                val view = inflater.inflate(R.layout.link_check_card, parent, false)
-//                val holder = Card1ViewHolder(view)
-//                card1EditText = holder.editText // שמור הפניה
-//                holder
-//            }
-//            TYPE_CARD_2 -> {
-//                val view = inflater.inflate(R.layout.browser_pick_card, parent, false)
-//                Card2ViewHolder(view)
-//            }
-//            else -> {
-//                val view = inflater.inflate(R.layout.settings_card, parent, false)
-//                Card3ViewHolder(view)
-//            }
-//        }
-//    }
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -77,41 +58,7 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
 
 
 
-//    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-//        // אפשר לעדכן כאן לוגיקה אם תרצה בעתיד
-//        when (holder) {
-//            is Card1ViewHolder -> {
-//                // דוגמה: תגובה ללחיצה על כפתור
-//                holder.checkButton.setOnClickListener {
-//                    val url = holder.editText.text.toString()
-//                    Toast.makeText(holder.itemView.context, "בדקתי: $url", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//
-//            is Card2ViewHolder -> {
-//                val context = holder.itemView.context
-//                val browsers = getInstalledBrowsers(context)
-//                val browserNames = browsers.map { it.loadLabel(context.packageManager).toString() }
-//                val packageNames = browsers.map { it.activityInfo.packageName }
-//
-//                val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, browserNames)
-//                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-//                holder.spinner.adapter = adapter
-//
-//
-//                holder.saveButton.setOnClickListener {
-//                    val selectedIndex = holder.spinner.selectedItemPosition
-//                    val pkg = packageNames[selectedIndex]
-//                    saveSelectedBrowser(context, pkg)
-//                    Toast.makeText(context, "Saved: $pkg", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//
-//            is Card3ViewHolder -> {
-//                // כרטיס ריק או משהו אחר
-//            }
-//        }
-//    }
+
 
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -152,7 +99,7 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
             }
 
             is Card3ViewHolder -> {
-                // כרטיס ריק או משהו אחר
+                // currently empty will contain settings in the future
             }
         }
     }
@@ -169,7 +116,7 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
     }
 
     class Card3ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // ריק או טקסט
+        // empty for now, will be used for settings in the future
     }
 
 
