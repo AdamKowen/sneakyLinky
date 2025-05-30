@@ -1,6 +1,6 @@
 # 🔒 LinkShield – Smart Link Protection for Android
 
-LinkShield is an Android application designed to protect users from phishing attempts and malicious links. It intercepts link clicks across the system, checks the URLs against a database of known threats, and provides real-time alerts before the link is opened.
+LinkShield is an Android application designed to protect users from phishing attempts and malicious links. It intercepts link clicks across the system, checks the URL and provides real-time alerts before the link is opened.
 
 ## 🚀 Project Goals
 
@@ -11,10 +11,9 @@ LinkShield is an Android application designed to protect users from phishing att
 ## 🧩 Key Features
 
 - **Link Interception**: Monitors and detects link clicks across various apps.
-- **Link Analysis**: Compares URLs to a local or remote database of malicious links.
+- **Link Analysis**: Compares URLs to a database of malicious links.
 - **User Alerts**: Displays a warning when a suspicious link is detected, allowing users to proceed or block.
 - **History Tracking**: Stores a record of intercepted links and user decisions.
-- **Admin Interface**: Enables monitoring and adjusting detection logic (under development).
 - **Custom Browser Handling**: Redirects safe links to the user’s chosen browser.
 
 ## 📱 User Experience
@@ -26,7 +25,6 @@ LinkShield is an Android application designed to protect users from phishing att
 ## 🛠️ Technologies
 
 - **Language**: Kotlin / Java (Android)
-- **Local Storage**: SQLite
 - **Networking**: HTTPS, Retrofit
 - **Optional Integration**: External APIs like VirusTotal or PhishTank
 
@@ -35,8 +33,6 @@ LinkShield is an Android application designed to protect users from phishing att
 client_app/ # Android source code
 server_app/ # Backend (optional, for centralized URL analysis)
 README.md # This file
-
-
 
 
 ## 📄 Specification
