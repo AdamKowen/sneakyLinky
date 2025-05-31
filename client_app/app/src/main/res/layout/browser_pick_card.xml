@@ -5,9 +5,8 @@
     android:layout_marginEnd="24dp"
     android:layout_marginTop="64dp"
     android:layout_marginBottom="64dp"
-
     android:background="@drawable/glass_background"
-    android:elevation="4dp">  <!-- צל עדין -->
+    android:elevation="4dp">
 
     <LinearLayout
         android:orientation="vertical"
@@ -15,24 +14,22 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="choose browser"
-            android:textSize="18sp"
-            android:textColor="#000"
-            android:layout_marginBottom="12dp"/>
-
-        <Spinner
-            android:id="@+id/browserSpinner"
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="בחר דפדפן"
+            android:textSize="22sp"
+            android:textColor="#000"
             android:layout_marginBottom="16dp"/>
 
-        <Button
-            android:id="@+id/saveBrowserButton"
-            android:layout_width="wrap_content"
+        <!-- Using ViewPager2 for horizontal carousel of browser names -->
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPagerBrowser"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="save" />
+            android:layout_marginBottom="16dp"
+            />
+
     </LinearLayout>
 </FrameLayout>

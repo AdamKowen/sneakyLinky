@@ -10,6 +10,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.example.sneakylinky.R
 import com.example.sneakylinky.util.*
 
@@ -85,17 +86,51 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
                 val browserNames = browsers.map { it.loadLabel(context.packageManager).toString() }
                 val packageNames = browsers.map { it.activityInfo.packageName }
 
-                val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, browserNames)
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                holder.spinner.adapter = adapter
-
-
-                holder.saveButton.setOnClickListener {
-                    val selectedIndex = holder.spinner.selectedItemPosition
-                    val pkg = packageNames[selectedIndex]
-                    saveSelectedBrowser(context, pkg)
-                    Toast.makeText(context, "Saved: $pkg", Toast.LENGTH_SHORT).show()
+                // 1. מגדירים Adapter פנימי ל-ViewPager2
+                val pagerAdapter = object : RecyclerView.Adapter<BrowserItemViewHolder>() {
+                    override fun onCreateViewHolder(
+                        parent: ViewGroup,
+                        viewType: Int
+                    ): BrowserItemViewHolder {
+                        val view = LayoutInflater.from(parent.context)
+                            .inflate(R.layout.browser_carousel_item, parent, false)
+                        return BrowserItemViewHolder(view)
+                    }
+                    override fun getItemCount(): Int = browserNames.size
+                    override fun onBindViewHolder(itemHolder: BrowserItemViewHolder, pos: Int) {
+                        itemHolder.textView.text = browserNames[pos]
+                    }
                 }
+                holder.viewPagerBrowser.adapter = pagerAdapter
+                holder.viewPagerBrowser.orientation = ViewPager2.ORIENTATION_VERTICAL
+
+
+                // 2. מגלגלים (scroll) ברגע שהמשתמש נכנס לכרטיס אל הדפדפן השמור (או ל-0 אם אין ערך)
+                val savedPkg = getSelectedBrowser(context)
+                val defaultIndex = if (savedPkg != null && savedPkg in packageNames) {
+                    packageNames.indexOf(savedPkg)
+                } else {
+                    0
+                }
+                // מגדירים ללא אנימציה, כדי שהפריט ייקפוץ ישר
+                holder.viewPagerBrowser.setCurrentItem(defaultIndex, /* smoothScroll= */ false)
+
+                // 3. מאזינים לשינוי עמוד (page) ב־ViewPager2 וכשיש עצירה מעדכנים את הבחירה
+                holder.viewPagerBrowser.registerOnPageChangeCallback(
+                    object : ViewPager2.OnPageChangeCallback() {
+                        override fun onPageSelected(positionSelected: Int) {
+                            super.onPageSelected(positionSelected)
+                            // שומרים את ה-package של הדפדפן שנבחר ברגע שהעמוד השתנה
+                            val pkgToSave = packageNames[positionSelected]
+                            saveSelectedBrowser(context, pkgToSave)
+                            Toast.makeText(
+                                context,
+                                "בדפדפן שנבחר: ${browserNames[positionSelected]}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                )
             }
 
             is Card3ViewHolder -> {
@@ -111,8 +146,7 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
     }
 
     class Card2ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val spinner: Spinner = itemView.findViewById(R.id.browserSpinner)
-        val saveButton: Button = itemView.findViewById(R.id.saveBrowserButton)
+        val viewPagerBrowser: ViewPager2 = itemView.findViewById(R.id.viewPagerBrowser)
     }
 
     class Card3ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -129,5 +163,13 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
         // This tells the RecyclerView to re-bind the first item (position 0),
         // which will trigger onBindViewHolder for TYPE_CARD_1.
         notifyItemChanged(0)
+    }
+
+
+    // 1. Creating an inner adapter for ViewPager2 to show browser names
+    // 2. Scroll to the saved/default index without animation
+    // 3. Register OnPageChangeCallback to save the package name when page changes
+    class BrowserItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val textView: TextView = itemView.findViewById(R.id.browserNameText)
     }
 }
