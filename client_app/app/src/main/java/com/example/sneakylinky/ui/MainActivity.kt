@@ -19,7 +19,7 @@ import android.net.Uri
 import android.util.Log
 import kotlin.math.abs
 
-import androidx.compose.ui.unit.dp
+
 import kotlinx.coroutines.delay
 
 class MainActivity : AppCompatActivity() {
@@ -81,7 +81,6 @@ class MainActivity : AppCompatActivity() {
         viewPager.apply {
             clipToPadding = false       // false to shpw neighboring pages
             setPadding(0, 0, 0, 0)      // no padding
-            offscreenPageLimit = 3
         }
 
 

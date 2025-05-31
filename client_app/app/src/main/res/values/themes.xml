@@ -1,7 +1,7 @@
 <resources>
-    <style name="Theme.SneakyLinky" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#6200EE</item>
-        <item name="colorPrimaryVariant">#3700B3</item>
+    <style name="Theme.SneakyLinky" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">#5553E2</item>
+        <item name="colorPrimaryVariant">#5553E2</item>
         <item name="colorOnPrimary">#FFFFFF</item>
 
         <item name="colorSecondary">#03DAC5</item>
