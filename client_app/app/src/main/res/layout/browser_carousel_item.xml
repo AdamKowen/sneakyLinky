@@ -1,8 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+
+    app:cardBackgroundColor="@color/purple_700"
+    app:cardCornerRadius="50dp"
+    app:cardElevation="4dp"
+    app:cardUseCompatPadding="true" >
 
     <TextView
         android:id="@+id/browserNameText"
@@ -11,5 +16,6 @@
         android:gravity="center"
         android:text="DefaultBrowser"
         android:textSize="20sp"
-        android:textColor="#000" />
-</FrameLayout>
+        android:background="@android:color/transparent"
+        android:textColor="#FFFFFF" />
+</com.google.android.material.card.MaterialCardView>

@@ -5,31 +5,30 @@
     android:layout_marginEnd="24dp"
     android:layout_marginTop="64dp"
     android:layout_marginBottom="64dp"
-    android:background="@drawable/glass_background"
+    android:background="@drawable/glass_background_custom"
     android:elevation="4dp">
 
     <LinearLayout
         android:orientation="vertical"
         android:padding="24dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="בחר דפדפן"
+            android:text="Browser to Redirect"
             android:textSize="22sp"
-            android:textColor="#000"
-            android:layout_marginBottom="16dp"/>
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="32dp"/>
 
-        <!-- Using ViewPager2 for horizontal carousel of browser names -->
-
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/viewPagerBrowser"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerBrowser"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            />
+            android:clipToPadding="false"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp" />
 
     </LinearLayout>
 </FrameLayout>

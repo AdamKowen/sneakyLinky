@@ -1,19 +1,19 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
 
-    <!-- גרדיינט עדין -->
+    <!-- gradient -->
     <gradient
         android:angle="270"
-        android:startColor="@color/glass_white_10"
+        android:startColor="@color/glass_white_05"
         android:centerColor="@color/glass_white_10"
         android:endColor="@color/glass_white_05"
         android:type="linear"/>
 
-    <!-- פינות 20dp -->
+    <!-- corner radius 20dp -->
     <corners android:radius="50dp"/>
 
-    <!-- מסגרת 1dp, 15% לבן -->
+    <!-- frame -->
     <stroke
         android:width="2dp"
-        android:color="@color/glass_white_15"/>
+        android:color="@color/near_white"/>
 </shape>

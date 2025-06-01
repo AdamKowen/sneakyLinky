@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.SneakyLinky" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.SneakyLinky" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">#5553E2</item>
         <item name="colorPrimaryVariant">#5553E2</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -12,5 +12,4 @@
         <item name="materialButtonStyle">@style/Widget.MaterialComponents.Button</item>
         <item name="cardViewStyle">@style/Widget.MaterialComponents.CardView</item>
     </style>
-
 </resources>
