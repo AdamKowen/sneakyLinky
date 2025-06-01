@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import com.example.sneakylinky.util.*
 import android.net.Uri
 import android.util.Log
+import com.example.sneakylinky.service.urlanalyzer.canonicalize
 import kotlin.math.abs
 
 
@@ -90,6 +91,8 @@ class MainActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 // Call the public function in CardAdapter to update the EditText
                 cardAdapter?.updateCard1Link(url)
+                val parsed=url.canonicalize()
+                println(parsed)
                 Log.d("DEBUG", "Link from intent updated in CardAdapter: $url")
                 // Short delay to ensure the CardAdapter has created the first card and its EditText
                 delay(300)
