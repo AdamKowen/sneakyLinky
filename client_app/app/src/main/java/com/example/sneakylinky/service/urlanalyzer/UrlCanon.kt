@@ -40,7 +40,7 @@ sealed class CanonicalParseResult {
         }
     }
     data class Error(val reason: ParseFailureReason) : CanonicalParseResult() {
-        override fun toString(): String = "❌ Error: parsing the uri failed - $reason \n"
+        override fun toString(): String = "❌ Parsing the uri failed - $reason \n"
     }
 }
 

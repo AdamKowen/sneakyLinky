@@ -1,25 +1,24 @@
 package com.example.sneakylinky.ui
 
-import android.annotation.SuppressLint
-import android.content.Intent
+
 import android.content.res.Resources
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.example.sneakylinky.R
 import com.example.sneakylinky.service.RetrofitClient
-import com.example.sneakylinky.service.MyAccessibilityService
 import kotlinx.coroutines.launch
 import com.example.sneakylinky.util.*
 import android.net.Uri
 import android.util.Log
 import kotlin.math.abs
 
-import androidx.compose.ui.unit.dp
+import com.example.sneakylinky.service.urlanalyzer.CanonicalParseResult
+import com.example.sneakylinky.service.urlanalyzer.canonicalize
+import com.example.sneakylinky.service.urlanalyzer.checkHostInLocalTables
+import com.example.sneakylinky.service.urlanalyzer.populateTestData
 import kotlinx.coroutines.delay
 
 class MainActivity : AppCompatActivity() {
@@ -39,6 +38,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // ─── TEMPORARY: Populate test data into Room tables ─────────────────────
+        populateTestData(this)  // <— call the helper from urltesting.kt
+        // ─────────────────────────────────────────────────────────────────────────
+
 
         val viewPager = findViewById<ViewPager2>(R.id.viewPager).apply {
             clipToPadding = false // Keep false to show neighboring pages
@@ -54,6 +57,19 @@ class MainActivity : AppCompatActivity() {
             cardAdapter = CardAdapter { url ->
                 // This is where the URL from the CardAdapter is received
                 // and the checkUrl logic (in MainActivity) is triggered.
+                
+                // omers testing the db ------------------------------------------------
+                val canonRes = url.canonicalize()
+                Log.d("DB_TEST", "canonicalize($url) = $canonRes")
+
+                if (canonRes is CanonicalParseResult.Success) {
+                    val canon = canonRes.canonUrl
+                    lifecycleScope.launch {
+                        val result = checkHostInLocalTables(this@MainActivity, canon)
+                        Log.d("DB_TEST", "checkHostInLocalTables($url) = $result")
+                    }
+                }
+                // omers testing the db ------------------------------------------------
                 checkUrl(url)
             }
             adapter = cardAdapter
