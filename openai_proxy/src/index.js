@@ -9,8 +9,8 @@
 
 require('dotenv').config();
 const express = require('express');
-const { analyzeUrl } = require('../openaiClient');
-const { registerRoutes } = require('../route');
+const { analyzeUrl } = require('./openaiClient');
+const { registerRoutes } = require('./route');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
