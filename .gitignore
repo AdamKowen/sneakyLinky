@@ -29,4 +29,19 @@ staticfiles/
 # ─── OS ────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
-*.zip                     
+*.zip     
+
+
+
+# ─── Node / JavaScript ──────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+coverage/
+.env.local
+
+# ─── VSCode ─────────────────────────────────────────────────────────────────
+.vscode/                
