@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.material)
 
     implementation(libs.guava)
+    implementation(libs.androidx.recyclerview)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
