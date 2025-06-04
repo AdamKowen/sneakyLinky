@@ -7,7 +7,7 @@
     android:layout_marginBottom="64dp"
 
     android:background="@drawable/glass_background_custom"
-    android:elevation="4dp">  <!-- צל עדין -->
+    android:elevation="4dp">  <!-- shadow -->
 
     <LinearLayout
         android:orientation="vertical"

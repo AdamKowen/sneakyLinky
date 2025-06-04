@@ -82,108 +82,16 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
                     Toast.makeText(holder.itemView.context, "Checked: $url", Toast.LENGTH_SHORT).show()
                 }
             }
-//            is Card2ViewHolder -> {
-//                val context = holder.itemView.context
-//                val browsers = getInstalledBrowsers(context)
-//                val browserNames = browsers.map { it.loadLabel(context.packageManager).toString() }
-//                val packageNames = browsers.map { it.activityInfo.packageName }
 //
-//                // adapter for ViewPager2
-//                val pagerAdapter = object : RecyclerView.Adapter<BrowserItemViewHolder>() {
-//                    override fun onCreateViewHolder(
-//                        parent: ViewGroup,
-//                        viewType: Int
-//                    ): BrowserItemViewHolder {
-//                        val view = LayoutInflater.from(parent.context)
-//                            .inflate(R.layout.browser_carousel_item, parent, false)
-//                        return BrowserItemViewHolder(view)
-//                    }
-//                    override fun getItemCount(): Int = browserNames.size
-//                    override fun onBindViewHolder(itemHolder: BrowserItemViewHolder, pos: Int) {
-//                        itemHolder.textView.text = browserNames[pos]
-//                    }
-//                }
-//                holder.viewPagerBrowser.adapter = pagerAdapter
-//                holder.viewPagerBrowser.orientation = ViewPager2.ORIENTATION_VERTICAL
-//                holder.viewPagerBrowser.clipToPadding = false // Essential for showing side items
-//
-//
-//                // Get screen density for DP conversion
-//                val density = context.resources.displayMetrics.density
-//
-//                // Pre-calculate pixel values for padding and transformation
-//                val pageMarginDp = 100 // Original DP value for padding
-//                val pageMarginPx = (pageMarginDp * density).toInt()
-//
-//                val translationYDp = 100 // Original DP value for translationY
-//                val translationYPx = (translationYDp * density)
-//
-//                // Apply vertical padding
-//                holder.viewPagerBrowser.setPadding(0, pageMarginPx, 0, pageMarginPx)
-//                holder.viewPagerBrowser.offscreenPageLimit = 3
-//
-//
-//
-//
-//
-//
-//                // PageTransformer for aggressive movement and fade
-//                holder.viewPagerBrowser.setPageTransformer { page, position ->
-//                    val absPosition = Math.abs(position)
-//
-//                    // Aggressive vertical translation
-//                    page.translationY = position * -translationYPx
-//
-//                    // Aggressive scaling
-//                    page.scaleY = 1f - 0.2f * absPosition
-//                    page.scaleX = 1f - 0.2f * absPosition
-//
-//                    // Fade effect at edges
-//                    val minAlpha = 0.5f // Minimum opacity for distant cards
-//                    val scaleFactor = 1f - absPosition * 0.5f // Alpha control
-//                    page.alpha = Math.max(minAlpha, scaleFactor)
-//
-//                    page.translationZ = -absPosition
-//                }
-//
-//
-//                // scroll to the saved/default browser index
-//                val savedPkg = getSelectedBrowser(context)
-//                val defaultIndex = if (savedPkg != null && savedPkg in packageNames) {
-//                    packageNames.indexOf(savedPkg)
-//                } else {
-//                    0
-//                }
-//                // no animation when scrolling to the default index
-//                holder.viewPagerBrowser.setCurrentItem(defaultIndex, /* smoothScroll= */ false)
-//
-//                // when stopping the scrolling, save the package name of the selected browser
-//                holder.viewPagerBrowser.registerOnPageChangeCallback(
-//                    object : ViewPager2.OnPageChangeCallback() {
-//                        override fun onPageSelected(positionSelected: Int) {
-//                            super.onPageSelected(positionSelected)
-//                            // saving the package name of the selected browser
-//                            val pkgToSave = packageNames[positionSelected]
-//                            saveSelectedBrowser(context, pkgToSave)
-//                            Toast.makeText(
-//                                context,
-//                                "Selected Browser: ${browserNames[positionSelected]}",
-//                                Toast.LENGTH_SHORT
-//                            ).show()
-//                        }
-//                    }
-//                )
-//            }
-
             is Card2ViewHolder -> {
                 val context = holder.itemView.context
                 val browsers = getInstalledBrowsers(context)
                 val savedPkg = getSelectedBrowser(context)
 
-                // Layout Manager אופקי
-                holder.recyclerBrowser.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+                // Layout Manager in vertical layout
+                holder.recyclerBrowser.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
 
-                // Snap לכל קלף
+                // Snap for the selected item
                 val snapHelper = PagerSnapHelper()
                 snapHelper.attachToRecyclerView(holder.recyclerBrowser)
 
@@ -195,7 +103,7 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
 
                 holder.recyclerBrowser.adapter = adapter
 
-                // גלילה ל־selected item אם נשמרה בחירה
+                // scrollinhg to the saved/default browser
                 val indexToScroll = browsers.indexOfFirst { it.activityInfo.packageName == savedPkg }
                 if (indexToScroll >= 0) {
                     holder.recyclerBrowser.scrollToPosition(indexToScroll)

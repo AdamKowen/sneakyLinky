@@ -16,4 +16,9 @@
     <color name="glass_white_10">#3DFFFFFF</color>
     <!-- ~5% white -->
     <color name="glass_white_05">#27FFFFFF</color>
+
+
+
+    <color name="card_default_background">#5AFFFFFF</color>
+    <color name="card_selected_background">#673AB7</color>
 </resources>
