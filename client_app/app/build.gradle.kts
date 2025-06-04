@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("kotlin-kapt");
-
 }
 
 android {
@@ -84,5 +83,6 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
-}
 
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+}
