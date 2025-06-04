@@ -6,112 +6,108 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 
-/**
- * DAO for the `trusted_hosts` table.
- */
 @Dao
-interface TrustedHostDao {
+interface HostCacheDao {
 
-    /**
-     * Return this host’s status (1, 2, or 3), or null if not present.
-     *   1 = Trusted
-     *   2 = Suspicious
-     *   3 = Blacklisted
-     */
-    @Query("""
-      SELECT status 
-      FROM trusted_hosts 
-      WHERE hostAscii = :host 
-      LIMIT 1
-    """)
-    suspend fun getStatus(host: String): Int?
+    @Query(
+        """
+        SELECT status 
+        FROM host_cache 
+        WHERE hostAscii = :host 
+        LIMIT 1
+    """
+    )
+    suspend fun getStatus(host: String): Int?     // Return host status (1=Trusted, 2=Suspicious, 3=Blacklisted) or null if not found
 
-    /**
-     * Insert new or replace existing row for a host.
-     * If host already exists, validatedAt & status are overwritten.
-     */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(trustedHost: TrustedHost)
+    suspend fun upsert(cachedHost: CachedHostEntry)     // Insert or replace host; updates validatedAt and status if it exists
 
-    /**
-     * Delete any host whose validatedAt is older than thresholdMillis (TTL logic).
-     */
-    @Query("DELETE FROM trusted_hosts WHERE validatedAt < :thresholdMillis")
-    suspend fun deleteOlderThan(thresholdMillis: Long)
+
+    @Query(
+        """
+        DELETE FROM host_cache
+        WHERE validatedAt < :thresholdMillis
+        """
+    )
+    suspend fun deleteOlderThan(thresholdMillis: Long)     // Delete hosts with validatedAt older than thresholdMillis (TTL)
+
 }
 
-/**
- * DAO for the `whitelist` table.
- * Supports single‐insert/delete and bulk replace.
- */
+
 @Dao
 interface WhitelistDao {
 
-    /**
-     * Returns true if the given host is in the whitelist table.
-     */
-    @Query("SELECT EXISTS(SELECT 1 FROM whitelist WHERE hostAscii = :host LIMIT 1)")
-    suspend fun isWhitelisted(host: String): Boolean
 
-    /**
-     * Insert a new entry; if it already exists, ignore the conflict.
-     */
+    @Query("SELECT * FROM whitelist")
+    suspend fun getAll(): List<WhitelistEntry>     // Return all whitelist entries
+
+
+    @Query(
+        """
+        SELECT EXISTS(
+            SELECT 1 
+            FROM whitelist 
+            WHERE hostAscii = :host 
+            LIMIT 1)
+            """
+    )
+    suspend fun isWhitelisted(host: String): Boolean     //Returns true if the given host is in the whitelist table.
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(entry: WhitelistEntry)
+    suspend fun insert(entry: WhitelistEntry)     //Insert a new entry; if it already exists, ignore the conflict.
 
-    /**
-     * Remove a single host from the whitelist.
-     */
-    @Query("DELETE FROM whitelist WHERE hostAscii = :host")
-    suspend fun delete(host: String)
 
-    /**
-     * Remove all rows from the whitelist.
-     */
+    @Query(
+        """
+        DELETE FROM whitelist 
+        WHERE hostAscii = :host
+        """
+    )
+    suspend fun delete(host: String)     //Remove a single host from the whitelist.
+
+
     @Query("DELETE FROM whitelist")
-    suspend fun clearAll()
+    suspend fun clearAll()     //Remove all rows from the whitelist.
 
-    /**
-     * Insert a list of entries at once (bulk insert). Conflicts (duplicate hostAscii) are ignored.
-     */
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertAll(entries: List<WhitelistEntry>)
+    suspend fun insertAll(entries: List<WhitelistEntry>)     //Insert a list of entries at once (bulk insert). Conflicts (duplicate hostAscii) are ignored.
+
 }
 
-/**
- * DAO for the `blacklist` table.
- * Supports single‐insert/delete and bulk replace.
- */
+
 @Dao
 interface BlacklistDao {
 
-    /**
-     * Returns true if the given host is in the blacklist table.
-     */
-    @Query("SELECT EXISTS(SELECT 1 FROM blacklist WHERE hostAscii = :host LIMIT 1)")
-    suspend fun isBlacklisted(host: String): Boolean
+    @Query(
+        """
+        SELECT EXISTS(
+            SELECT 1 FROM blacklist 
+            WHERE hostAscii = :host 
+            LIMIT 1)
+        """
+    )
+    suspend fun isBlacklisted(host: String): Boolean     // Check if host is blacklisted
 
-    /**
-     * Insert a new entry; if it already exists, ignore the conflict.
-     */
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(entry: BlacklistEntry)
+    suspend fun insert(entry: BlacklistEntry)     // Insert entry if not already in blacklist
 
-    /**
-     * Remove a single host from the blacklist.
-     */
-    @Query("DELETE FROM blacklist WHERE hostAscii = :host")
-    suspend fun delete(host: String)
 
-    /**
-     * Remove all rows from the blacklist.
-     */
+    @Query(
+        """
+        DELETE FROM blacklist 
+        WHERE hostAscii = :host
+        """
+    )
+    suspend fun delete(host: String)     // Delete a single host from blacklist
+
+
     @Query("DELETE FROM blacklist")
-    suspend fun clearAll()
+    suspend fun clearAll()    // Clear all blacklist entries
 
-    /**
-     * Insert a list of entries at once (bulk insert). Conflicts are ignored.
-     */
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertAll(entries: List<BlacklistEntry>)
+    suspend fun insertAll(entries: List<BlacklistEntry>)     // Bulk insert entries; ignore conflicts
+
 }

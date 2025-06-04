@@ -17,7 +17,7 @@ import kotlin.math.abs
 
 import com.example.sneakylinky.service.urlanalyzer.CanonicalParseResult
 import com.example.sneakylinky.service.urlanalyzer.canonicalize
-import com.example.sneakylinky.service.urlanalyzer.checkHostInLocalTables
+import com.example.sneakylinky.service.urlanalyzer.isLocalSafe
 import com.example.sneakylinky.service.urlanalyzer.populateTestData
 import kotlinx.coroutines.delay
 
@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // ─── TEMPORARY: Populate test data into Room tables ─────────────────────
-        populateTestData(this)  // <— call the helper from urltesting.kt
+        populateTestData()  // <— call the helper from urltesting.kt
         // ─────────────────────────────────────────────────────────────────────────
 
 
@@ -58,18 +58,25 @@ class MainActivity : AppCompatActivity() {
                 // This is where the URL from the CardAdapter is received
                 // and the checkUrl logic (in MainActivity) is triggered.
                 
-                // omers testing the db ------------------------------------------------
-                val canonRes = url.canonicalize()
-                Log.d("DB_TEST", "canonicalize($url) = $canonRes")
+                // ------------------------------------------------------------------------------------------------
+                val canonRes = url.canonicalize()   /// returns CanonicalParseResult which has two subclasses: Error and Success
 
                 if (canonRes is CanonicalParseResult.Success) {
-                    val canon = canonRes.canonUrl
+                    val canon = canonRes.canonUrl  /// CanonUrl is a data class with all the parsed URL components only if parsing was successful
+                    Log.d("DB_TEST", "canonicalize($url) = $canon")
+
                     lifecycleScope.launch {
-                        val result = checkHostInLocalTables(this@MainActivity, canon)
-                        Log.d("DB_TEST", "checkHostInLocalTables($url) = $result")
+                        val isSafe = canon.isLocalSafe()
+                        Log.d("URL_TEST", "isUrlLocalSafe($url) = $isSafe")
+                        /// we checked the db -> we run local static checks : true if passes all \ false if fails any (for now)
+                        /// todo handle the result of isLocalSafe
                     }
+
+                } else if (canonRes is CanonicalParseResult.Error) {
+                    Log.d("DB_TEST", "Error parsing URL: ${canonRes.reason}")
+                    ///todo handle the error case
                 }
-                // omers testing the db ------------------------------------------------
+                // ------------------------------------------------------------------------------------------------
                 checkUrl(url)
             }
             adapter = cardAdapter
