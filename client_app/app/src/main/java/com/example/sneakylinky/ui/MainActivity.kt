@@ -112,13 +112,15 @@ class MainActivity : AppCompatActivity() {
                 val response = apiService.checkUrl(mapOf("url" to url))
                 if (response.status == "safe") {
                     Toast.makeText(this@MainActivity,
-                        "Safe link!\n${response.message}\nSafe: ${response.details.safe}/${response.details.total}\nMore info: ${response.permalink}",
-                        Toast.LENGTH_LONG).show()
+                        "Safe link!\n${response.message}", Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(this@MainActivity,
-                        "Unsafe link!\n${response.message}",
-                        Toast.LENGTH_LONG).show()
+                    val intent = Intent(this@MainActivity, LinkWarningActivity::class.java).apply {
+                        putExtra("url", url)
+                        putExtra("warningText", "Unsafe link!\n${response.message}")
+                    }
+                    startActivity(intent)
                 }
+
             } catch (e: Exception) {
                 Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }

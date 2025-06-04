@@ -37,6 +37,7 @@
             </intent-filter>
 
         </activity>
+        <activity android:name=".ui.LinkWarningActivity" />
         <service
             android:name=".service.MyAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
@@ -49,8 +50,6 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
-
-
 
 
     </application>
