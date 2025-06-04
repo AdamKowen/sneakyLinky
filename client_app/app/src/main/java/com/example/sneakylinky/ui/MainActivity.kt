@@ -85,20 +85,7 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        val intentData: Uri? = intent?.data
-        intentData?.let { uri ->
-            val url = uri.toString()
-            lifecycleScope.launch {
-                // Call the public function in CardAdapter to update the EditText
-                cardAdapter?.updateCard1Link(url)
-                val parsed=url.canonicalize()
-                println(parsed)
-                Log.d("DEBUG", "Link from intent updated in CardAdapter: $url")
-                // Short delay to ensure the CardAdapter has created the first card and its EditText
-                delay(300)
-                launchInSelectedBrowser(this@MainActivity, url)
-            }
-        }
+        handleIncomingLink(intent)
 
 
         val browsers = getInstalledBrowsers(this@MainActivity)
@@ -126,5 +113,28 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingLink(intent)
+    }
+
+
+    private fun handleIncomingLink(intent: Intent?) {
+        intent?.data?.let { uri ->
+            val url = uri.toString()
+            lifecycleScope.launch {
+                cardAdapter?.updateCard1Link(url)
+                val parsed = url.canonicalize()
+                println(parsed)
+                Log.d("DEBUG", "Link handled: $url")
+                delay(300)
+                launchInSelectedBrowser(this@MainActivity, url)
+            }
+        }
+    }
+
 
 }

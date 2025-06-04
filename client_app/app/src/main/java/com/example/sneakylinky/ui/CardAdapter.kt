@@ -1,5 +1,6 @@
 package com.example.sneakylinky.ui
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -76,11 +77,22 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
                 }
 
                 // Set the click listener for the check button
+                //holder.checkButton.setOnClickListener {
+                //    val url = holder.editText.text.toString()
+                //    onCheckUrl(url) // Invoke the callback passed from MainActivity
+                //    Toast.makeText(holder.itemView.context, "Checked: $url", Toast.LENGTH_SHORT).show()
+                //}
+
+
                 holder.checkButton.setOnClickListener {
                     val url = holder.editText.text.toString()
-                    onCheckUrl(url) // Invoke the callback passed from MainActivity
-                    Toast.makeText(holder.itemView.context, "Checked: $url", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(holder.itemView.context, LinkWarningActivity::class.java).apply {
+                        putExtra("url", url)
+                        putExtra("warningText", "This is a placeholder warning for testing.")
+                    }
+                    holder.itemView.context.startActivity(intent)
                 }
+
             }
 //
             is Card2ViewHolder -> {
