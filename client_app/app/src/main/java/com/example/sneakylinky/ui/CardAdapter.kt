@@ -4,16 +4,13 @@ import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager2.widget.ViewPager2
 import com.example.sneakylinky.R
 import com.example.sneakylinky.util.*
 
@@ -54,7 +51,7 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
                 Card2ViewHolder(view)
             }
             else -> {
-                val view = inflater.inflate(R.layout.settings_card, parent, false)
+                val view = inflater.inflate(R.layout.history_card, parent, false)
                 Card3ViewHolder(view)
             }
         }
@@ -123,7 +120,10 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
             }
 
             is Card3ViewHolder -> {
-                // currently empty will contain settings in the future
+                holder.recyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
+                holder.recyclerView.adapter = HistoryAdapter(
+                    listOf("https://google.com", "https://example.com", "https://suspicious.com")
+                )
             }
         }
     }
@@ -140,7 +140,7 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
 
 
     class Card3ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // empty for now, will be used for settings in the future
+        val recyclerView: RecyclerView = itemView.findViewById(R.id.historyRecycler)
     }
 
 
