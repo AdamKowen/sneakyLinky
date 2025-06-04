@@ -1,7 +1,7 @@
 <resources>
     <style name="Theme.SneakyLinky" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#6200EE</item>
-        <item name="colorPrimaryVariant">#3700B3</item>
+        <item name="colorPrimary">#5553E2</item>
+        <item name="colorPrimaryVariant">#5553E2</item>
         <item name="colorOnPrimary">#FFFFFF</item>
 
         <item name="colorSecondary">#03DAC5</item>
@@ -9,8 +9,7 @@
 
         <item name="android:windowBackground">?android:colorBackground</item>
 
-        <item name="materialButtonStyle">@style/Widget.MaterialComponents.Button</item>
+        <item name="materialButtonStyle">@style/SneakyButton_WhiteRounded</item>
         <item name="cardViewStyle">@style/Widget.MaterialComponents.CardView</item>
     </style>
-
 </resources>

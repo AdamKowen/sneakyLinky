@@ -8,12 +8,26 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="near_white">#F6F6F6</color>
-<!--    <color name="backgroundPurple">#6C4AB6</color> //background color-->
-    <color name="backgroundPurple">#6137F3</color>
+
+
+    <!-- <color name="backgroundPurple">#6C4AB6</color> //background color-->
+    <color name="backgroundPurple">#5855EB</color>
+    <!-- ~50% white -->
+    <color name="glass_white_50">#3CFFFFFF</color>
     <!-- ~15% white -->
     <color name="glass_white_15">#74FFFFFF</color>
     <!-- ~10% white -->
     <color name="glass_white_10">#3DFFFFFF</color>
     <!-- ~5% white -->
     <color name="glass_white_05">#27FFFFFF</color>
+
+
+
+    <color name="card_default_background">#1EFFFFFF</color>
+    <color name="card_selected_background">#6F6CE9</color>
+
+
+    <color name="gray_button">#A9A9A9</color>
+
+
 </resources>

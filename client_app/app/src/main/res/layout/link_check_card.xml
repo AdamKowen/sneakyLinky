@@ -25,7 +25,7 @@
             app:srcCompat="@drawable/floating" />
 
 
-        <!-- 2. תיבת הטקסט עם טקסט לבן (או near-white) -->
+        <!-- 2. text box font color ( near-white) -->
         <EditText
             android:id="@+id/editTextUrl"
             android:layout_width="match_parent"
@@ -38,14 +38,13 @@
             android:backgroundTintMode="src_in"/>
 
 
-        <!-- 3. כפתור בדיקה -->
+        <!-- 3. check button -->
         <Button
             android:id="@+id/checkButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"
-            android:text="Check"
-            android:background="@drawable/rounded_button" />
+            android:text="Check" />
     </LinearLayout>
 </FrameLayout>

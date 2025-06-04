@@ -1,14 +1,15 @@
 package com.example.sneakylinky.ui
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.sneakylinky.R
 import com.example.sneakylinky.util.*
@@ -50,7 +51,7 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
                 Card2ViewHolder(view)
             }
             else -> {
-                val view = inflater.inflate(R.layout.settings_card, parent, false)
+                val view = inflater.inflate(R.layout.history_card, parent, false)
                 Card3ViewHolder(view)
             }
         }
@@ -73,33 +74,56 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
                 }
 
                 // Set the click listener for the check button
+                //holder.checkButton.setOnClickListener {
+                //    val url = holder.editText.text.toString()
+                //    onCheckUrl(url) // Invoke the callback passed from MainActivity
+                //    Toast.makeText(holder.itemView.context, "Checked: $url", Toast.LENGTH_SHORT).show()
+                //}
+
+
                 holder.checkButton.setOnClickListener {
                     val url = holder.editText.text.toString()
-                    onCheckUrl(url) // Invoke the callback passed from MainActivity
-                    Toast.makeText(holder.itemView.context, "Checked: $url", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(holder.itemView.context, LinkWarningActivity::class.java).apply {
+                        putExtra("url", url)
+                        putExtra("warningText", "This is a placeholder warning for testing.")
+                    }
+                    holder.itemView.context.startActivity(intent)
                 }
+
             }
+//
             is Card2ViewHolder -> {
                 val context = holder.itemView.context
                 val browsers = getInstalledBrowsers(context)
-                val browserNames = browsers.map { it.loadLabel(context.packageManager).toString() }
-                val packageNames = browsers.map { it.activityInfo.packageName }
+                val savedPkg = getSelectedBrowser(context)
 
-                val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, browserNames)
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                holder.spinner.adapter = adapter
+                // Layout Manager in vertical layout
+                holder.recyclerBrowser.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
 
+                // Snap for the selected item
+                val snapHelper = PagerSnapHelper()
+                snapHelper.attachToRecyclerView(holder.recyclerBrowser)
 
-                holder.saveButton.setOnClickListener {
-                    val selectedIndex = holder.spinner.selectedItemPosition
-                    val pkg = packageNames[selectedIndex]
-                    saveSelectedBrowser(context, pkg)
-                    Toast.makeText(context, "Saved: $pkg", Toast.LENGTH_SHORT).show()
+                val adapter = BrowserCarouselAdapter(browsers, context) { browser ->
+                    val pkgName = browser.activityInfo.packageName
+                    saveSelectedBrowser(context, pkgName)
+                    Toast.makeText(context, "Selected Browser: ${browser.loadLabel(context.packageManager)}", Toast.LENGTH_SHORT).show()
+                }
+
+                holder.recyclerBrowser.adapter = adapter
+
+                // scrollinhg to the saved/default browser
+                val indexToScroll = browsers.indexOfFirst { it.activityInfo.packageName == savedPkg }
+                if (indexToScroll >= 0) {
+                    holder.recyclerBrowser.scrollToPosition(indexToScroll)
                 }
             }
 
             is Card3ViewHolder -> {
-                // currently empty will contain settings in the future
+                holder.recyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
+                holder.recyclerView.adapter = HistoryAdapter(
+                    listOf("https://google.com", "https://example.com", "https://suspicious.com")
+                )
             }
         }
     }
@@ -111,12 +135,12 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
     }
 
     class Card2ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val spinner: Spinner = itemView.findViewById(R.id.browserSpinner)
-        val saveButton: Button = itemView.findViewById(R.id.saveBrowserButton)
+        val recyclerBrowser: RecyclerView = itemView.findViewById(R.id.recyclerBrowser)
     }
 
+
     class Card3ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // empty for now, will be used for settings in the future
+        val recyclerView: RecyclerView = itemView.findViewById(R.id.historyRecycler)
     }
 
 
@@ -129,5 +153,13 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
         // This tells the RecyclerView to re-bind the first item (position 0),
         // which will trigger onBindViewHolder for TYPE_CARD_1.
         notifyItemChanged(0)
+    }
+
+
+    // 1. Creating an inner adapter for ViewPager2 to show browser names
+    // 2. Scroll to the saved/default index without animation
+    // 3. Register OnPageChangeCallback to save the package name when page changes
+    class BrowserItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val textView: TextView = itemView.findViewById(R.id.browserNameText)
     }
 }

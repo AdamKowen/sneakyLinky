@@ -1,0 +1,19 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- gradient -->
+    <gradient
+        android:angle="270"
+        android:startColor="@color/glass_white_05"
+        android:centerColor="@color/glass_white_10"
+        android:endColor="@color/glass_white_05"
+        android:type="linear"/>
+
+    <!-- corner radius 20dp -->
+    <corners android:radius="50dp"/>
+
+    <!-- frame -->
+    <stroke
+        android:width="2dp"
+        android:color="@color/near_white"/>
+</shape>

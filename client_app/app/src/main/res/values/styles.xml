@@ -1,0 +1,29 @@
+<!-- res/values/styles.xml -->
+<resources>
+
+    <!-- Rounded white button with purple text -->
+    <style name="SneakyButton_WhiteRounded" parent="Widget.MaterialComponents.Button">
+        <!-- Background and text -->
+        <item name="backgroundTint">@color/near_white</item>
+        <item name="android:textColor">@color/backgroundPurple</item>
+
+        <!-- Rounded corners -->
+        <item name="shapeAppearance">@style/SneakyShape_Rounded12</item>
+
+        <!-- Bigger text -->
+        <item name="android:textSize">18sp</item>
+
+        <!-- Bigger height and padding -->
+        <item name="android:minHeight">56dp</item> <!-- default button height -->
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+    </style>
+
+
+    <!-- shape definition: 12dp rounded corners on all corners -->
+    <style name="SneakyShape_Rounded12">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+</resources>

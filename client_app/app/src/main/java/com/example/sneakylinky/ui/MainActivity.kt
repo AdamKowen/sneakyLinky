@@ -1,25 +1,27 @@
 package com.example.sneakylinky.ui
 
-import android.annotation.SuppressLint
+
 import android.content.Intent
 import android.content.res.Resources
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.example.sneakylinky.R
 import com.example.sneakylinky.service.RetrofitClient
-import com.example.sneakylinky.service.MyAccessibilityService
 import kotlinx.coroutines.launch
 import com.example.sneakylinky.util.*
 import android.net.Uri
 import android.util.Log
+import com.example.sneakylinky.service.urlanalyzer.canonicalize
 import kotlin.math.abs
 
-import androidx.compose.ui.unit.dp
+
+import com.example.sneakylinky.service.urlanalyzer.CanonicalParseResult
+import com.example.sneakylinky.service.urlanalyzer.canonicalize
+import com.example.sneakylinky.service.urlanalyzer.isLocalSafe
+import com.example.sneakylinky.service.urlanalyzer.populateTestData
 import kotlinx.coroutines.delay
 
 class MainActivity : AppCompatActivity() {
@@ -39,6 +41,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // ─── TEMPORARY: Populate test data into Room tables ─────────────────────
+        populateTestData()  // <— call the helper from urltesting.kt
+        // ─────────────────────────────────────────────────────────────────────────
+
 
         val viewPager = findViewById<ViewPager2>(R.id.viewPager).apply {
             clipToPadding = false // Keep false to show neighboring pages
@@ -54,6 +60,26 @@ class MainActivity : AppCompatActivity() {
             cardAdapter = CardAdapter { url ->
                 // This is where the URL from the CardAdapter is received
                 // and the checkUrl logic (in MainActivity) is triggered.
+
+                // ------------------------------------------------------------------------------------------------
+                val canonRes = url.canonicalize()   /// returns CanonicalParseResult which has two subclasses: Error and Success
+
+                if (canonRes is CanonicalParseResult.Success) {
+                    val canon = canonRes.canonUrl  /// CanonUrl is a data class with all the parsed URL components only if parsing was successful
+                    Log.d("DB_TEST", "canonicalize($url) = $canon")
+
+                    lifecycleScope.launch {
+                        val isSafe = canon.isLocalSafe()
+                        Log.d("URL_TEST", "isUrlLocalSafe($url) = $isSafe")
+                        /// we checked the db -> we run local static checks : true if passes all \ false if fails any (for now)
+                        /// todo handle the result of isLocalSafe
+                    }
+
+                } else if (canonRes is CanonicalParseResult.Error) {
+                    Log.d("DB_TEST", "Error parsing URL: ${canonRes.reason}")
+                    ///todo handle the error case
+                }
+                // ------------------------------------------------------------------------------------------------
                 checkUrl(url)
             }
             adapter = cardAdapter
@@ -81,22 +107,10 @@ class MainActivity : AppCompatActivity() {
         viewPager.apply {
             clipToPadding = false       // false to shpw neighboring pages
             setPadding(0, 0, 0, 0)      // no padding
-            offscreenPageLimit = 3
         }
 
 
-        val intentData: Uri? = intent?.data
-        intentData?.let { uri ->
-            val url = uri.toString()
-            lifecycleScope.launch {
-                // Call the public function in CardAdapter to update the EditText
-                cardAdapter?.updateCard1Link(url)
-                Log.d("DEBUG", "Link from intent updated in CardAdapter: $url")
-                // Short delay to ensure the CardAdapter has created the first card and its EditText
-                delay(300)
-                launchInSelectedBrowser(this@MainActivity, url)
-            }
-        }
+        handleIncomingLink(intent)
 
 
         val browsers = getInstalledBrowsers(this@MainActivity)
@@ -110,17 +124,42 @@ class MainActivity : AppCompatActivity() {
                 val response = apiService.checkUrl(mapOf("url" to url))
                 if (response.status == "safe") {
                     Toast.makeText(this@MainActivity,
-                        "Safe link!\n${response.message}\nSafe: ${response.details.safe}/${response.details.total}\nMore info: ${response.permalink}",
-                        Toast.LENGTH_LONG).show()
+                        "Safe link!\n${response.message}", Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(this@MainActivity,
-                        "Unsafe link!\n${response.message}",
-                        Toast.LENGTH_LONG).show()
+                    val intent = Intent(this@MainActivity, LinkWarningActivity::class.java).apply {
+                        putExtra("url", url)
+                        putExtra("warningText", "Unsafe link!\n${response.message}")
+                    }
+                    startActivity(intent)
                 }
+
             } catch (e: Exception) {
                 Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingLink(intent)
+    }
+
+
+    private fun handleIncomingLink(intent: Intent?) {
+        intent?.data?.let { uri ->
+            val url = uri.toString()
+            lifecycleScope.launch {
+                cardAdapter?.updateCard1Link(url)
+                val parsed = url.canonicalize()
+                println(parsed)
+                Log.d("DEBUG", "Link handled: $url")
+                delay(300)
+                launchInSelectedBrowser(this@MainActivity, url)
+            }
+        }
+    }
+
 
 }
