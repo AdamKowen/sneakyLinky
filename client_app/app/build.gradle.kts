@@ -80,10 +80,7 @@ dependencies {
     implementation("androidx.viewpager2:viewpager2:1.0.0")
     implementation ("androidx.cardview:cardview:1.0.0")
 
-    // ROOM
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    kapt(libs.androidx.room.compiler)
+
 
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
