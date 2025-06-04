@@ -10,7 +10,6 @@ A secure Node.js Express server that acts as a proxy for OpenAI API requests. Th
 - **Health Check:** Simple `/health` endpoint for monitoring server status.
 - **Modular Code:** All routes and OpenAI logic are separated for easy maintenance and extension.
 - **JSDoc Documentation:** All code is documented for clarity and maintainability.
-- **Automated Testing:** Includes unit, integration, and route tests using Jest and Supertest.
 
 ---
 
