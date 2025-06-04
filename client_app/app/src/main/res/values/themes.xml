@@ -9,7 +9,7 @@
 
         <item name="android:windowBackground">?android:colorBackground</item>
 
-        <item name="materialButtonStyle">@style/Widget.MaterialComponents.Button</item>
+        <item name="materialButtonStyle">@style/SneakyButton_WhiteRounded</item>
         <item name="cardViewStyle">@style/Widget.MaterialComponents.CardView</item>
     </style>
 </resources>

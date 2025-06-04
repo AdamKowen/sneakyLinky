@@ -26,8 +26,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingTop="8dp"
-            android:textColor="@color/near_white"
-            android:textSize="14sp"
+            android:textColor="@color/white"
+            android:textSize="18sp"
             android:gravity="center"/>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

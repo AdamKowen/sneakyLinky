@@ -21,7 +21,11 @@
 
 
 
-    <color name="card_default_background">#5AFFFFFF</color>
-    <color name="card_selected_background">#673AB7</color>
+    <color name="card_default_background">#1EFFFFFF</color>
+    <color name="card_selected_background">#5855EB</color>
+
+
+    <color name="gray_button">#A9A9A9</color>
+
 
 </resources>
