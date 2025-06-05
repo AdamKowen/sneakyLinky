@@ -9,8 +9,11 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.sneakylinky.R
+import com.example.sneakylinky.util.launchInSelectedBrowser
 
 class LinkWarningActivity : AppCompatActivity() {
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_link_warning)
@@ -28,8 +31,7 @@ class LinkWarningActivity : AppCompatActivity() {
 
         proceedButton.setOnClickListener {
             url?.let {
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(it))
-                startActivity(browserIntent)
+                launchInSelectedBrowser(this@LinkWarningActivity, it)
                 finish()
             }
         }

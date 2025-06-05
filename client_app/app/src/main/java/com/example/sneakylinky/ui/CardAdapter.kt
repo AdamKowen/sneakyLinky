@@ -73,22 +73,13 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
                     pendingUrlForCard1 = null
                 }
 
-                // Set the click listener for the check button
-                //holder.checkButton.setOnClickListener {
-                //    val url = holder.editText.text.toString()
-                //    onCheckUrl(url) // Invoke the callback passed from MainActivity
-                //    Toast.makeText(holder.itemView.context, "Checked: $url", Toast.LENGTH_SHORT).show()
-                //}
 
 
                 holder.checkButton.setOnClickListener {
-                    val url = holder.editText.text.toString()
-                    val intent = Intent(holder.itemView.context, LinkWarningActivity::class.java).apply {
-                        putExtra("url", url)
-                        putExtra("warningText", "This is a placeholder warning for testing.")
-                    }
-                    holder.itemView.context.startActivity(intent)
+                    val raw = holder.editText.text.toString()
+                    onCheckUrl(raw)          // delegate to activity – no coroutines here
                 }
+
 
             }
 //
