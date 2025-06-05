@@ -44,7 +44,7 @@ class LinkRelayActivity : AppCompatActivity() {
         /* canonicalize */
         val canon = when (val r = finalUrl.canonicalize()) {
             is CanonicalParseResult.Success -> r.canonUrl
-            else -> { showWarning(finalUrl, "Invalid URL"); finish(); return }
+            else -> { showWarning(finalUrl, "Internal error: could not verify link safely"); finish(); return }
         }
 
         /* local DB / static check */
@@ -56,60 +56,13 @@ class LinkRelayActivity : AppCompatActivity() {
             launchInSelectedBrowser(this, finalUrl)                // open browser
             SneakyLinkyApp.appScope.launch { remoteScanAsync(finalUrl) } // AI scan (bg)
         } else {
-            showWarning(finalUrl, "Local checks flagged this link as risky.")
+            showWarning(finalUrl, "Link found to be suspicious. Proceed with caution.")
         }
 
         MainActivity.lastOpenedLink = finalUrl                     // remember for UI
         finishAndRemoveTask()                                      // vanish
     }
 
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        android.util.Log.d("ACT_TRACE", "Relay started")
-//
-//        super.onCreate(savedInstanceState)
-//
-//
-//        // Don't show any UI
-//        // Do not call setContentView() – keep this screen invisible
-//
-//        val raw = intent?.dataString ?: run {
-//            finish()
-//            return
-//        }
-//
-//        lifecycleScope.launch {
-//            // 0) resolve final redirect
-//            val finalUrl = withContext(Dispatchers.IO) {
-//                when (val res = LinkChecker.resolveUrl(raw)) {
-//                    is LinkChecker.UrlResolutionResult.Success -> res.finalUrl
-//                    else -> raw
-//                }
-//            }
-//
-//            // 1) canonicalize
-//            val canon = when (val r = finalUrl.canonicalize()) {
-//                is CanonicalParseResult.Success -> r.canonUrl
-//                else -> {
-//                    showWarning(finalUrl, "Invalid URL")
-//                    finish()
-//                    return@launch
-//                }
-//            }
-//
-//            // 2) local check
-//            val isSafe = withContext(Dispatchers.IO) { canon.isLocalSafe() }
-//
-//            if (isSafe) {
-//                launchInSelectedBrowser(this@LinkRelayActivity, finalUrl)
-//                SneakyLinkyApp.appScope.launch { remoteScanAsync(finalUrl) }
-//            } else {
-//                showWarning(finalUrl, "Local checks flagged this link as risky.")
-//            }
-//
-//            MainActivity.lastOpenedLink = finalUrl
-//            finish()
-//        }
-//    }
 
 
     /* -------------------- helpers -------------------- */
