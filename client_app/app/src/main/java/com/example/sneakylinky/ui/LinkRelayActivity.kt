@@ -18,6 +18,7 @@ import kotlinx.coroutines.withContext
 import android.Manifest
 import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.collection.emptyLongSet
 import androidx.core.content.ContextCompat
 
 
@@ -70,7 +71,13 @@ class LinkRelayActivity : AppCompatActivity() {
             .onSuccess { ai ->
                 if (ai.phishingScore >= 0.5f) {
                     withContext(Dispatchers.Main) {      // run on UI thread
-                        safeShowToast("Potential risk detected. Stay alert!")
+                        safeShowToast("Potential risk detected. Stay alert!⚠\uFE0F ")
+                    }
+                }
+                else
+                {
+                    withContext(Dispatchers.Main) {
+                        showHeadsUp("Sneaky Approves ✅")
                     }
                 }
             }
