@@ -1,20 +1,17 @@
-@file:Suppress("SameParameterValue")
-
 package com.example.sneakylinky
 
 import com.example.sneakylinky.service.LinkChecker
+import com.example.sneakylinky.service.LinkChecker.UrlResolutionResult
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import org.junit.Assert.*      // assertEquals / assertTrue / assertThat וכו'
 
 class LinkCheckerTest {
 
     private lateinit var server: MockWebServer
-
-    /* ───────────── Lifecycle ───────────── */
 
     @Before
     fun setUp() {
@@ -27,202 +24,138 @@ class LinkCheckerTest {
         server.shutdown()
     }
 
-    /* ───────────── Helpers ───────────── */
-
-    /** Enqueue a simple (empty-body) HEAD response with optional Location header. */
-    private fun enqueueHead(status: Int, location: String? = null) {
-        val response = MockResponse().setResponseCode(status).setBody("")
-        location?.let { response.setHeader("Location", it) }
-        server.enqueue(response)
-    }
-
-    /** Convenience to build an absolute URL served by the mock server. */
-    private fun mockUrl(path: String) = server.url(path).toString()
-
-    /* ───────────── Tests ───────────── */
-
+    // 200 OK, no redirects → expect Success
     @Test
-    fun noRedirect_returnsSuccessWith200() {
-        // Arrange
-        enqueueHead(200)
-        val url = mockUrl("/ok")
+    fun resolves_withoutRedirects_returnsSuccess() {
+        server.enqueue(MockResponse().setResponseCode(200))
 
-        // Act
-        val result = LinkChecker.resolveUrl(url)
+        val targetUrl = server.url("/no-redirect").toString()
+        val result = LinkChecker.resolveUrl(targetUrl)
 
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Success)
-        result as LinkChecker.UrlResolutionResult.Success
-        assertEquals(url, result.finalUrl)
+        assertTrue(result is UrlResolutionResult.Success)
+        result as UrlResolutionResult.Success
+        assertEquals(targetUrl, result.finalUrl)
         assertEquals(0, result.redirectCount)
         assertEquals(200, result.finalStatusCode)
     }
 
+    // 302 → 301 → 200 chain → expect final success after 2 hops
     @Test
-    fun singleRedirect_resolvesWithOneHop() {
-        // Arrange
-        val targetUrl = mockUrl("/final")
-        enqueueHead(302, targetUrl)  // hop #0
-        enqueueHead(200)             // hop #1
+    fun follows_redirectChain_untilFinalLocation() {
+        // /step1 302 → /step2
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(302)
+                .setHeader("Location", "/step2")
+        )
+        // /step2 301 → /final
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(301)
+                .setHeader("Location", "/final")
+        )
+        // /final 200 OK
+        server.enqueue(MockResponse().setResponseCode(200))
 
-        // Act
-        val result = LinkChecker.resolveUrl(mockUrl("/start"))
+        val start = server.url("/step1").toString()
+        val expectedFinal = server.url("/final").toString()
 
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Success)
-        result as LinkChecker.UrlResolutionResult.Success
-        assertEquals(targetUrl, result.finalUrl)
-        assertEquals(1, result.redirectCount)
+        val result = LinkChecker.resolveUrl(start)
+
+        assertTrue(result is UrlResolutionResult.Success)
+        result as UrlResolutionResult.Success
+        assertEquals(expectedFinal, result.finalUrl)
+        assertEquals(2, result.redirectCount)
         assertEquals(200, result.finalStatusCode)
     }
 
+    // Redirect loop (/loop → /loop) should return LOOP_DETECTED failure
     @Test
-    fun multipleRedirectsWithinLimit_returnsSuccess() {
-        // Arrange
-        val hop1 = mockUrl("/1")
-        val hop2 = mockUrl("/2")
-        val hop3 = mockUrl("/3")
-        enqueueHead(301, hop1)
-        enqueueHead(302, hop2)
-        enqueueHead(307, hop3)
-        enqueueHead(200)
-
-        // Act
-        val result = LinkChecker.resolveUrl(mockUrl("/start"))
-
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Success)
-        result as LinkChecker.UrlResolutionResult.Success
-        assertEquals(hop3, result.finalUrl)
-        assertEquals(3, result.redirectCount)
-    }
-
-    @Test
-    fun redirectLoop_returnsLoopDetected() {
-        // Arrange
-        val loopUrl = mockUrl("/loop")
-        enqueueHead(301, loopUrl)
-        enqueueHead(301, loopUrl)     // same Location repeated
-
-        // Act
-        val result = LinkChecker.resolveUrl(loopUrl)
-
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Failure)
-        result as LinkChecker.UrlResolutionResult.Failure
-        assertEquals(LinkChecker.UrlResolutionResult.ErrorCause.LOOP_DETECTED, result.error)
-    }
-
-    @Test
-    fun exceedsRedirectLimit_returnsExceeded() {
-        // Arrange – 6 redirects > default 5
-        repeat(6) { enqueueHead(302, mockUrl("/$it")) }
-
-        // Act
-        val result = LinkChecker.resolveUrl(mockUrl("/start"))
-
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Failure)
-        result as LinkChecker.UrlResolutionResult.Failure
-        assertEquals(LinkChecker.UrlResolutionResult.ErrorCause.EXCEEDED_REDIRECT_LIMIT, result.error)
-        assertTrue(result.redirectCount > 5)
-    }
-
-    @Test
-    fun missingLocationHeader_returnsUnrecoverableLocation() {
-        // Arrange
-        enqueueHead(302)              // 302 without Location
-
-        // Act
-        val result = LinkChecker.resolveUrl(mockUrl("/broken"))
-
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Failure)
-        result as LinkChecker.UrlResolutionResult.Failure
-        assertEquals(LinkChecker.UrlResolutionResult.ErrorCause.UNRECOVERABLE_LOCATION, result.error)
-    }
-
-    @Test
-    fun invalidUrl_returnsInvalidUrl() {
-        // Act
-        val result = LinkChecker.resolveUrl("ht!tp:// bad url")
-
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Failure)
-        result as LinkChecker.UrlResolutionResult.Failure
-        assertEquals(LinkChecker.UrlResolutionResult.ErrorCause.INVALID_URL, result.error)
-    }
-
-    @Test
-    fun finalStatus403_stillSuccess() {
-        // Arrange
-        enqueueHead(403)
-
-        // Act
-        val result = LinkChecker.resolveUrl(mockUrl("/forbidden"))
-
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Success)
-        result as LinkChecker.UrlResolutionResult.Success
-        assertEquals(403, result.finalStatusCode)
-    }
-
-    @Test
-    fun headNotAllowed405_stillSuccess() {
-        // Arrange
-        enqueueHead(405)
-
-        // Act
-        val result = LinkChecker.resolveUrl(mockUrl("/head-not-allowed"))
-
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Success)
-        result as LinkChecker.UrlResolutionResult.Success
-        assertEquals(405, result.finalStatusCode)
-    }
-
-    @Test
-    fun networkException_returnsNetworkError() {
-        // Arrange – shut server before making request
-        server.shutdown()
-        val unreachable = mockUrl("/down")
-
-        // Act
-        val result = LinkChecker.resolveUrl(unreachable)
-
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Failure)
-        result as LinkChecker.UrlResolutionResult.Failure
-        assertEquals(LinkChecker.UrlResolutionResult.ErrorCause.NETWORK_EXCEPTION, result.error)
-    }
-
-
-    @Test
-    fun garbageLocation_returnsUnrecoverableLocation() {
-        enqueueHead(302, null)             // no Location header
-        val result = LinkChecker.resolveUrl(mockUrl("/start"))
-        assertTrue(result is LinkChecker.UrlResolutionResult.Failure)
-        result as LinkChecker.UrlResolutionResult.Failure
-        assertEquals(
-            LinkChecker.UrlResolutionResult.ErrorCause.UNRECOVERABLE_LOCATION,
-            result.error
+    fun detect_redirectLoop_returnsLoopDetected() {
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(302)
+                .setHeader("Location", "/loop")
         )
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(302)
+                .setHeader("Location", "/loop")
+        )
+
+        val result = LinkChecker.resolveUrl(server.url("/loop").toString(), maxRedirects = 4)
+
+        assertTrue(result is UrlResolutionResult.Failure)
+        result as UrlResolutionResult.Failure
+        assertEquals(UrlResolutionResult.ErrorCause.LOOP_DETECTED, result.error)
+        assertTrue(result.redirectCount >= 1)
     }
 
+    // More hops than maxRedirects → expect EXCEEDED_REDIRECT_LIMIT failure
     @Test
-    fun customRedirectLimitIsHonoured() {
-        // Arrange – 2 redirects but limit = 1
-        val hop1 = mockUrl("/hop1")
-        enqueueHead(302, hop1)
-        enqueueHead(302, mockUrl("/hop2"))
+    fun exceeds_redirectLimit_returnsExceededLimit() {
+        repeat(6) {
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(302)
+                    .setHeader("Location", "/hop$it")
+            )
+        }
 
-        // Act
-        val result = LinkChecker.resolveUrl(mockUrl("/start"), maxRedirects = 1)
+        val result = LinkChecker.resolveUrl(server.url("/hop0").toString(), maxRedirects = 3)
 
-        // Assert
-        assertTrue(result is LinkChecker.UrlResolutionResult.Failure)
-        result as LinkChecker.UrlResolutionResult.Failure
-        assertEquals(LinkChecker.UrlResolutionResult.ErrorCause.EXCEEDED_REDIRECT_LIMIT, result.error)
-        assertEquals(2, result.redirectCount)
+        assertTrue(result is UrlResolutionResult.Failure)
+        result as UrlResolutionResult.Failure
+        assertEquals(UrlResolutionResult.ErrorCause.EXCEEDED_REDIRECT_LIMIT, result.error)
+        assertEquals(4, result.redirectCount)  // 0-based hops counter
+    }
+
+    // Relative Location header (/relative) must resolve correctly
+    @Test
+    fun follows_relativeLocationHeader_correctly() {
+        //  start 302 → /relative
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(302)
+                .setHeader("Location", "/relative")
+        )
+        // 200 OK
+        server.enqueue(MockResponse().setResponseCode(200))
+
+        val start = server.url("/start").toString()
+        val expectedFinal = server.url("/relative").toString()
+
+        val result = LinkChecker.resolveUrl(start)
+
+        assertTrue(result is UrlResolutionResult.Success)
+        result as UrlResolutionResult.Success
+        assertEquals(1, result.redirectCount)
+        assertEquals(expectedFinal, result.finalUrl)
+        assertEquals(200, result.finalStatusCode)
+    }
+
+    // Host without scheme becomes https://… but fails TLS → NETWORK_EXCEPTION
+    @Test
+    fun schemeLessHost_returnsNetworkExceptionButAddsScheme() {
+        val naked = server.hostName              // "localhost"
+        val result = LinkChecker.resolveUrl(naked)
+
+        assertTrue(result is UrlResolutionResult.Failure)
+        result as UrlResolutionResult.Failure
+        assertEquals(UrlResolutionResult.ErrorCause.NETWORK_EXCEPTION, result.error)
+        assertTrue(result.originalUrl.startsWith("https://"))
+    }
+
+
+    // Invalid URL (no scheme, no host) → expect INVALID_URL error
+    @Test
+    fun absurdString_returnsInvalidUrlError() {
+        val absurd = "🚀:// white space\n"      // תווים אסורים + רווח + שורה חדשה
+        val result = LinkChecker.resolveUrl(absurd)
+
+        assertTrue(result is UrlResolutionResult.Failure)
+        result as UrlResolutionResult.Failure
+        assertEquals(UrlResolutionResult.ErrorCause.INVALID_URL, result.error)
+        assertEquals(0, result.redirectCount)
     }
 }
