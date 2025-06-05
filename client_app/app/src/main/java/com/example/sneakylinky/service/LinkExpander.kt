@@ -78,10 +78,19 @@ object LinkChecker {
             maxRedirects: Int = DEFAULT_REDIRECT_LIMIT
         ): UrlResolutionResult {
 
-            println("🔍 Resolving URL: $url")
-            var current = HttpUrl.parse(url)
+            // --- normalize scheme --------------------------------------------------------
+            var sanitized = url.trim()
+
+            val hasScheme = sanitized.startsWith("http://", true) ||
+                    sanitized.startsWith("https://", true)
+
+            if (!hasScheme) sanitized = "https://$sanitized"
+            // -----------------------------------------------------------------------------
+
+
+            var current = HttpUrl.parse(sanitized)
                 ?: return UrlResolutionResult.Failure(
-                    url,
+                    sanitized,
                     UrlResolutionResult.ErrorCause.INVALID_URL
                 )
 
@@ -96,7 +105,7 @@ object LinkChecker {
                         when {
                             res.code() < 300 || res.code() >= 400 -> {
                                 return UrlResolutionResult.Success(
-                                    url,
+                                    sanitized,
                                     current.toString(),
                                     hops,
                                     res.code()
@@ -108,7 +117,7 @@ object LinkChecker {
 
                                 if (next == null) {
                                     return UrlResolutionResult.Failure(
-                                        url,
+                                        sanitized,
                                         UrlResolutionResult.ErrorCause.UNRECOVERABLE_LOCATION,
                                         hops
                                     )
@@ -116,7 +125,7 @@ object LinkChecker {
 
                                 if (!visited.add(next)) {
                                     return UrlResolutionResult.Failure(
-                                        url,
+                                        sanitized,
                                         UrlResolutionResult.ErrorCause.LOOP_DETECTED,
                                         hops
                                     )
@@ -131,13 +140,13 @@ object LinkChecker {
                     }
                 } catch (e: IOException) {
                     return UrlResolutionResult.Failure(
-                        url,
+                        sanitized,
                         UrlResolutionResult.ErrorCause.NETWORK_EXCEPTION,
                         hops
                     )
                 } catch (e: Exception) {
                     return UrlResolutionResult.Failure(
-                        url,
+                        sanitized,
                         UrlResolutionResult.ErrorCause.UNKNOWN,
                         hops
                     )
@@ -145,7 +154,7 @@ object LinkChecker {
             }
 
             return UrlResolutionResult.Failure(
-                url,
+                sanitized,
                 UrlResolutionResult.ErrorCause.EXCEEDED_REDIRECT_LIMIT,
                 hops
             )
