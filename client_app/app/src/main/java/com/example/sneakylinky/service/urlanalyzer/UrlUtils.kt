@@ -200,7 +200,8 @@ fun populateTestData() {
             "yahoo.com",
             "yandex.ru",
             "youtube.com",
-            "zoom.us"
+            "zoom.us",
+            "m.facebook.com"
         ).map { WhitelistEntry(it) }
         wlDao.insertAll(entries)
 
