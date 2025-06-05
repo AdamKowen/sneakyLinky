@@ -1,4 +1,4 @@
-# 🔒 LinkShield – Smart Link Protection for Android
+# 🔒 SneakyLinky – Smart Link Protection for Android
 
 LinkShield is an Android application designed to protect users from phishing attempts and malicious links. It intercepts link clicks across the system, checks the URL and provides real-time alerts before the link is opened.
 
