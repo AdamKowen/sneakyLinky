@@ -8,7 +8,8 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.junit.Assert.*      // assertEquals / assertTrue / assertThat וכו'
+import org.junit.Assert.*      // assertEquals / assertTrue / assertThat
+
 
 class LinkCheckerTest {
 

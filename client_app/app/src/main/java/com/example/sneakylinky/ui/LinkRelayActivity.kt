@@ -65,8 +65,6 @@ class LinkRelayActivity : AppCompatActivity() {
 
 
 
-    /* -------------------- helpers -------------------- */
-
     private suspend fun remoteScanAsync(url: String) {
         runCatching { UrlAnalyzer.analyze(url) }
             .onSuccess { ai ->
