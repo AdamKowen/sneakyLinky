@@ -1,5 +1,6 @@
 package com.example.sneakylinky.ui
 
+import android.content.Context
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
@@ -15,7 +16,17 @@ import com.example.sneakylinky.R
 import com.example.sneakylinky.util.*
 
 //  constructor accept a callback function for URL checking
-class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class CardAdapter(private val context: Context, private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+
+
+    // SharedPreferences keys
+    private val PREFS_NAME = "sneaky_linky_prefs"
+    private val KEY_HISTORY = "history_urls"
+
+    // Load persisted history into a mutable list
+    private val historyList: MutableList<String> = loadHistoryFromPrefs().toMutableList()
+
 
     // This variable will hold the URL that needs to be displayed in the first card.
     private var pendingUrlForCard1: String? = null
@@ -82,7 +93,6 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
 
 
             }
-//
             is Card2ViewHolder -> {
                 val context = holder.itemView.context
                 val browsers = getInstalledBrowsers(context)
@@ -112,9 +122,7 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
 
             is Card3ViewHolder -> {
                 holder.recyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
-                holder.recyclerView.adapter = HistoryAdapter(
-                    listOf("https://google.com", "https://example.com", "https://suspicious.com")
-                )
+                holder.recyclerView.adapter = HistoryAdapter(historyList)
             }
         }
     }
@@ -136,14 +144,47 @@ class CardAdapter(private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapt
 
 
     /**
-     * Public function to set a URL that the first card should display.
-     * This method saves the URL and then notifies the adapter to re-bind the first item.
+     * Public function to set a URL that the first card should display,
+     * and also add it to historyList (persisted) and refresh cards #1 and #3.
      */
     fun updateCard1Link(link: String) {
         pendingUrlForCard1 = link
-        // This tells the RecyclerView to re-bind the first item (position 0),
-        // which will trigger onBindViewHolder for TYPE_CARD_1.
+
+        // 1) Add the new link at index 0 (so newest appear at top)
+        historyList.add(0, link)
+        // 2) Persist the updated history to SharedPreferences
+        saveHistoryToPrefs()
+
+        // 3) Refresh card #1 to update EditText, and card #3 to update history list
         notifyItemChanged(0)
+        notifyItemChanged(2)
+    }
+
+    /**
+     * Load the persisted history from SharedPreferences.
+     * Returns a List<String> of URLs (newest first).
+     */
+    private fun loadHistoryFromPrefs(): List<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val allUrlsString = prefs.getString(KEY_HISTORY, "") ?: ""
+        if (allUrlsString.isEmpty()) {
+            return emptyList()
+        }
+        // Split by '\n' into a list; newest at index 0
+        return allUrlsString.split("\n")
+    }
+
+    /**
+     * Save the current historyList into SharedPreferences as a single
+     * newline-separated string.
+     */
+    private fun saveHistoryToPrefs() {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        // Join the list by '\n'
+        val joined = historyList.joinToString(separator = "\n")
+        prefs.edit()
+            .putString(KEY_HISTORY, joined)
+            .apply()
     }
 
 
