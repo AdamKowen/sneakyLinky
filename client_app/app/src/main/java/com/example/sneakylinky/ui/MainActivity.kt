@@ -1,5 +1,9 @@
 package com.example.sneakylinky.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 import android.content.Intent
 import android.content.res.Resources
@@ -131,8 +135,13 @@ class MainActivity : AppCompatActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        android.util.Log.d("ACT_TRACE", "Main started")
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        requestNotificationPermissionIfNeeded()
 
         // ─── TEMPORARY: Populate test data into Room tables ─────────────────────
         populateTestData()  // <— call the helper from urltesting.kt
@@ -191,27 +200,6 @@ class MainActivity : AppCompatActivity() {
         lastOpenedLink?.let { cardAdapter?.updateCard1Link(it) }
     }
 
-    private fun checkUrl(url: String) {
-        lifecycleScope.launch {
-            try {
-                val response = apiService.checkUrl(mapOf("url" to url))
-                if (response.status == "safe") {
-                    Toast.makeText(this@MainActivity,
-                        "Safe link!\n${response.message}", Toast.LENGTH_LONG).show()
-                } else {
-                    val intent = Intent(this@MainActivity, LinkWarningActivity::class.java).apply {
-                        putExtra("url", url)
-                        putExtra("warningText", "Unsafe link!\n${response.message}")
-                    }
-                    startActivity(intent)
-                }
-
-            } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -220,32 +208,44 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun canonicalizeOrShowError(raw: String): CanonUrl? {
+    fun handleIncomingLink(intent: Intent?) {
+        val raw = intent?.dataString ?: return   // ← get URI string safely
+        lifecycleScope.launch { resolveAndProcess(raw) }
+    }
+
+    suspend fun resolveAndProcess(raw: String) {
+        val result = withContext(Dispatchers.IO) {
+            LinkChecker.resolveUrl(raw)
+        }
+
+        when (result) {
+            is LinkChecker.UrlResolutionResult.Success -> {
+                val canon = canonicalizeOrShowError(result.finalUrl) ?: return
+                cardAdapter?.updateCard1Link(result.finalUrl)
+                isLinkSafeLocally(canon)
+            }
+            is LinkChecker.UrlResolutionResult.Failure -> {
+                showWarning(raw, "Internal error: could not verify link safely")
+            }
+        }
+    }
+
+    fun canonicalizeOrShowError(raw: String): CanonUrl? {
         val result = raw.canonicalize()
         return when (result) {
             is CanonicalParseResult.Success -> result.canonUrl
             is CanonicalParseResult.Error   -> {
-                // minimal UX: toast + stay in app
-                Toast.makeText(this, "Invalid URL", Toast.LENGTH_SHORT).show()
+                showWarning(raw, "Internal error: could not verify link safely")
                 null
             }
         }
     }
 
 
-    private fun showWarning(url: String, reason: String) {
-        val intent = Intent(this, LinkWarningActivity::class.java).apply {
-            putExtra("url", url)
-            putExtra("warningText", reason)   //-warningTextView
-        }
-        startActivity(intent)
-    }
-
-
-    private suspend fun localFlow(canon: CanonUrl) {
+    suspend fun isLinkSafeLocally(canon: CanonUrl) {
         if (!canon.isLocalSafe()) {
             showWarning(canon.originalUrl,
-                "Local static checks failed. Proceed with caution.")
+                "Link found to be suspicious. Proceed with caution.")
             return
         }
         launchInSelectedBrowser(this, canon.originalUrl)
@@ -254,59 +254,42 @@ class MainActivity : AppCompatActivity() {
 
 
 
-    private fun handleIncomingLink(intent: Intent?) {
-        val raw = intent?.dataString ?: return   // ← get URI string safely
-        lifecycleScope.launch { resolveAndProcess(raw) }
+    fun showWarning(url: String, reason: String) {
+        val intent = Intent(this, LinkWarningActivity::class.java).apply {
+            putExtra("url", url)
+            putExtra("warningText", reason)   //-warningTextView
+        }
+        startActivity(intent)
     }
 
-    private suspend fun resolveAndProcess(raw: String) {
-        // 1) resolve redirects (network – run on IO)
-//        val result = withContext(Dispatchers.IO) {
-//            LinkChecker.resolveUrl(raw)
-//        }
-//
-//        when (result) {
-//            is LinkChecker.UrlResolutionResult.Success -> {
-//                val finalUrl = result.finalUrl
-//                val canon = canonicalizeOrShowError(finalUrl) ?: return
-//                cardAdapter?.updateCard1Link(canon.originalUrl)
-//                localFlow(canon)
-//            }
-//            is LinkChecker.UrlResolutionResult.Failure -> {
-//                showWarning(raw, "Could not resolve URL (${result.error.description})")
-//            }
-//        }
 
-
-
-
-        // added just for testing purposes! :
-        val canon = canonicalizeOrShowError(raw) ?: return
-        cardAdapter?.updateCard1Link(canon.originalUrl)
-        localFlow(canon)   // ← still runs local DB + static checks
-
-    }
-
-    private fun remoteCheckAsync(url: String) = lifecycleScope.launch {
+    fun remoteCheckAsync(url: String) = lifecycleScope.launch {
         withContext(Dispatchers.IO) {
             runCatching { UrlAnalyzer.analyze(url) }
         }.onSuccess { ai ->
             if (ai.phishingScore >= 0.5f) {    // threshold – tweak
                 showHeadsUp("Potential risk detected. Stay alert!") // Snackbar/Dialog
+                //Toast.makeText(this@MainActivity,
+                   // "Potential risk detected. Stay alert!", Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    private fun showHeadsUp(msg: String) {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("SneakyLinky")
-            .setMessage(msg)
-            .setPositiveButton("OK", null)
-            .show()
+
+    /* heads-up via Toast – safe even if Activity already finished */
+    private fun showHeadsUp(msg: String) =
+        android.widget.Toast.makeText(applicationContext, msg, android.widget.Toast.LENGTH_LONG).show()
+
+
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            val permission = Manifest.permission.POST_NOTIFICATIONS
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(permission), 1001)
+            }
+        }
     }
-
-
-
 
 
 }

@@ -1,5 +1,6 @@
 package com.example.sneakylinky.util
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -21,15 +22,24 @@ fun getSelectedBrowser(context: Context): String? {
 /* open URL in chosen browser */
 fun launchInSelectedBrowser(context: Context, url: String) {
     val selectedPackage = getSelectedBrowser(context)
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-    selectedPackage?.let { intent.setPackage(it) }
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
+        selectedPackage?.let { setPackage(it) }
+    }
+
     Toast.makeText(context, "Sneaky got link!", Toast.LENGTH_SHORT).show()
+
     try {
         context.startActivity(intent)
+        if (context is Activity) {
+            // remove enter animation ↔ prevents brief UI flash
+            context.overridePendingTransition(0, 0)
+        }
     } catch (e: ActivityNotFoundException) {
         Toast.makeText(context, "Cannot open link", Toast.LENGTH_SHORT).show()
     }
 }
+
 
 
 fun getInstalledBrowsers(context: Context): List<ResolveInfo> {
