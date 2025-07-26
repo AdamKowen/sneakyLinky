@@ -122,8 +122,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun analyzeText(text: String) {
-        // TODO: לחבר לשירות החיצוני כשתהיה החלטה
-        Log.d("ACT_TRACE", "Analyze text: $text")
+        // Launch a coroutine on the Main (UI) thread
+        lifecycleScope.launch {
+            // Perform network call on IO dispatcher
+            val result = withContext(Dispatchers.IO) {
+                runCatching { UrlAnalyzer.analyze(text) }
+            }
+
+            // If call succeeded, check the phishingScore and show appropriate message
+            result.onSuccess { ai ->
+                if (ai.phishingScore >= 0.5f) {
+                    // English comment: show warning for suspicious text
+                    showHeadsUp("Potential malicious text detected. Proceed with caution.")
+                } else {
+                    // English comment: show confirmation for safe text
+                    showHeadsUp("Text appears safe.")
+                }
+            }
+                // If call failed, inform the user about the error
+                .onFailure { e ->
+                    Toast.makeText(this@MainActivity,
+                        "Error analyzing text: ${e.message}",
+                        Toast.LENGTH_LONG).show()
+                }
+        }
     }
 
     fun handleIncomingLink(intent: Intent?) {

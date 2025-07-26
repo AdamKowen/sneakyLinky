@@ -104,9 +104,15 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
 
             }
             is PasteViewHolder -> {
+                // English hint for the empty EditText
+                holder.edit.hint = "Enter text here"
+                // English label for the analyze button
+                holder.btn.text = "Analyze"
+
                 holder.btn.setOnClickListener {
                     val txt = holder.edit.text.toString()
-                    onAnalyzeText(txt)          // כרגע פונקציה ריקה שתמלא בהמשך
+                    // delegate the entered text to the analysis function
+                    onAnalyzeText(txt)
                 }
             }
             is Card2ViewHolder -> {
