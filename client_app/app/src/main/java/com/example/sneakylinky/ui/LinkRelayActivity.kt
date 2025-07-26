@@ -17,9 +17,11 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
 import android.widget.Toast
 import androidx.collection.emptyLongSet
 import androidx.core.content.ContextCompat
+import com.example.sneakylinky.LinkContextCache
 
 
 class LinkRelayActivity : AppCompatActivity() {
@@ -61,7 +63,18 @@ class LinkRelayActivity : AppCompatActivity() {
         }
 
         MainActivity.lastOpenedLink = finalUrl                     // remember for UI
-        finishAndRemoveTask()                                      // vanish
+        finishAndRemoveTask() // vanish
+
+
+        val contextTxt = LinkContextCache
+            .takeIf { it.lastLink == finalUrl }
+            ?.surroundingTxt    // null-safe
+
+        if (!contextTxt.isNullOrBlank()) {
+            Log.d("Relay", "Context text: $contextTxt")
+            // לדוגמה, צרף ל-AI-Scan:
+            // UrlAnalyzer.analyze(finalUrl, contextTxt)
+        }
     }
 
 

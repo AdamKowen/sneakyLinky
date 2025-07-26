@@ -6,6 +6,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
+object LinkContextCache {
+    @Volatile var lastLink:      String? = null
+    @Volatile var surroundingTxt: String? = null
+}
+
+
 class SneakyLinkyApp : Application() {
     companion object {
         // Singleton instance to access app-wide context

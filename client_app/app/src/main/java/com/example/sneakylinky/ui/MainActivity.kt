@@ -62,11 +62,11 @@ class MainActivity : AppCompatActivity() {
         // ─────────────────────────────────────────────────────────────────────────
 
 
-        cardAdapter = CardAdapter(this) { raw ->
-            lifecycleScope.launch {
-                resolveAndProcess(raw)
-            }
-        }
+        cardAdapter = CardAdapter(
+            this,
+            onCheckUrl = { raw -> lifecycleScope.launch { resolveAndProcess(raw) } },
+            onAnalyzeText = { pasted -> analyzeText(pasted) }     // **חדש**
+        )
 
 
         val viewPager = findViewById<ViewPager2>(R.id.viewPager).apply {
@@ -121,6 +121,10 @@ class MainActivity : AppCompatActivity() {
         handleIncomingLink(intent)
     }
 
+    private fun analyzeText(text: String) {
+        // TODO: לחבר לשירות החיצוני כשתהיה החלטה
+        Log.d("ACT_TRACE", "Analyze text: $text")
+    }
 
     fun handleIncomingLink(intent: Intent?) {
         val raw = intent?.dataString ?: return   // ← get URI string safely

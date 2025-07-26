@@ -3,6 +3,7 @@ import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import com.example.sneakylinky.LinkContextCache
 import com.example.sneakylinky.ui.MainActivity
 import java.lang.ref.WeakReference
 
@@ -15,16 +16,18 @@ class MyAccessibilityService : AccessibilityService() {
             activityRef = WeakReference(activity)
         }
     }
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        event?.let {
-            Log.d("MyAccessibilityService", "Event received: ${it.eventType}")
-            if (event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
-                event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
-                event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+    override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        if (event.eventType != AccessibilityEvent.TYPE_VIEW_CLICKED) return
+        val src = event.source ?: return
 
-                Log.d("MyAccessibilityService", "Scanning node tree for links...")
-                scanNodeTree(rootInActiveWindow)
-            }
+        val url = Regex("""https?://\S+""").find(event.text.joinToString(" "))
+            ?: findLinkInNode(src)
+
+        if (url != null) {
+            val contextTxt = "${parentText(src)} ${src.text}"
+            LinkContextCache.lastLink       = url.toString()
+            LinkContextCache.surroundingTxt = contextTxt
+            Log.d("AccService", "Saved context: $contextTxt")
         }
     }
 
@@ -63,6 +66,12 @@ class MyAccessibilityService : AccessibilityService() {
         }
         return null
     }
+
+
+    /** מחזיר את הטקסט של ה-parent של node (אם יש) */
+    private fun parentText(node: AccessibilityNodeInfo?): String =
+        node?.parent?.text?.toString().orEmpty()
+
 
     override fun onInterrupt() {
         Log.d("MyAccessibilityService", "Accessibility Service Interrupted")

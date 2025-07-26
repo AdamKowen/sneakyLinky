@@ -15,7 +15,7 @@ import com.example.sneakylinky.R
 import com.example.sneakylinky.util.*
 
 //  constructor accept a callback function for URL checking
-class CardAdapter(private val context: Context, private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class CardAdapter(private val context: Context, private val onCheckUrl: (String) -> Unit, private val onAnalyzeText: (String) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
 
 
@@ -33,15 +33,17 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
 
     companion object {
         private const val TYPE_CARD_1 = 0
-        private const val TYPE_CARD_2 = 1
-        private const val TYPE_CARD_3 = 2
+        private const val TYPE_CARD_PASTE = 1
+        private const val TYPE_CARD_2 = 2
+        private const val TYPE_CARD_3 = 3
     }
 
-    override fun getItemCount(): Int = 3
+    override fun getItemCount(): Int = 4
 
     override fun getItemViewType(position: Int): Int = when (position) {
         0 -> TYPE_CARD_1
-        1 -> TYPE_CARD_2
+        1 -> TYPE_CARD_PASTE
+        2 -> TYPE_CARD_2
         else -> TYPE_CARD_3
     }
 
@@ -56,6 +58,10 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
                 // Store the reference to the EditText when the ViewHolder for the first card is created
                 holder
             }
+            TYPE_CARD_PASTE -> {
+                val v = inflater.inflate(R.layout.check_text_card, parent, false)
+                PasteViewHolder(v)
+            }
             TYPE_CARD_2 -> {
                 val view = inflater.inflate(R.layout.browser_pick_card, parent, false)
                 Card2ViewHolder(view)
@@ -67,6 +73,11 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
         }
     }
 
+
+    class PasteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val edit: EditText = itemView.findViewById(R.id.longTextInput)
+        val btn : Button   = itemView.findViewById(R.id.analyzeButton)
+    }
 
 
 
@@ -91,6 +102,12 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
                 }
 
 
+            }
+            is PasteViewHolder -> {
+                holder.btn.setOnClickListener {
+                    val txt = holder.edit.text.toString()
+                    onAnalyzeText(txt)          // כרגע פונקציה ריקה שתמלא בהמשך
+                }
             }
             is Card2ViewHolder -> {
                 val context = holder.itemView.context
@@ -156,7 +173,7 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
 
         // 3) Refresh card #1 to update EditText, and card #3 to update history list
         notifyItemChanged(0)
-        notifyItemChanged(2)
+        notifyItemChanged(3)
     }
 
     /**
