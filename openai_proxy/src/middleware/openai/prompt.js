@@ -2,10 +2,8 @@
  * Contains the constant CYBERSEC_PROMPT used for phishing risk analysis prompts.
  *
  * @file prompt.js
- * @author sneakyLinky
  * @description Exports the prompt template for OpenAI phishing detection.
  */
-const MESSAGE_LENGTH_LIMIT = 600; // Max length for user messages
 
 const CYBERSEC_PROMPT = `
 You are a CYBERSECURITY assistant.
@@ -85,6 +83,6 @@ OUTPUT:
 # TASK – ANALYZE THE USER MESSAGE
 ############################################
 Return ONLY the JSON object described above.
-Now analyze this MESSAGE: `;
+Now analyze this URL or MESSAGE: `;
 
-module.exports = { CYBERSEC_PROMPT, MESSAGE_LENGTH_LIMIT };
+module.exports = { CYBERSEC_PROMPT };
