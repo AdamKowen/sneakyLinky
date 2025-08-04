@@ -8,7 +8,6 @@ import androidx.core.content.ContextCompat
 import android.content.Intent
 import android.content.res.Resources
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
@@ -16,21 +15,18 @@ import com.example.sneakylinky.R
 import com.example.sneakylinky.service.RetrofitClient
 import kotlinx.coroutines.launch
 import com.example.sneakylinky.util.*
-import android.net.Uri
 import android.util.Log
 import com.example.sneakylinky.service.LinkChecker
-import com.example.sneakylinky.service.aianalysis.UrlAnalyzer
+import com.example.sneakylinky.service.serveranalysis.UrlAnalyzer
 import com.example.sneakylinky.service.urlanalyzer.CanonUrl
 import com.example.sneakylinky.service.urlanalyzer.canonicalize
 import kotlin.math.abs
 
 
 import com.example.sneakylinky.service.urlanalyzer.CanonicalParseResult
-import com.example.sneakylinky.service.urlanalyzer.canonicalize
 import com.example.sneakylinky.service.urlanalyzer.isLocalSafe
 import com.example.sneakylinky.service.urlanalyzer.populateTestData
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
