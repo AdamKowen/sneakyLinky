@@ -10,7 +10,7 @@
  * --------
  * - **name** `STRING(253)` – primary key.  
  *   · Must not be empty, 3-253 chars, valid FQDN.  
- * - **suspicious** `BOOLEAN` – whether the domain is considered risky.  
+ * - **suspicious** `INTEGER` – whether the domain is considered risky.  
  *   · Defaults to `false`.
  *
  * The model also includes `createdAt` and `updatedAt` timestamps

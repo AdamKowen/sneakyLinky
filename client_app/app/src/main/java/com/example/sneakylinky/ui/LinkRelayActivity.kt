@@ -3,10 +3,9 @@ package com.example.sneakylinky.ui
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.example.sneakylinky.SneakyLinkyApp
 import com.example.sneakylinky.service.LinkChecker
-import com.example.sneakylinky.service.aianalysis.UrlAnalyzer
+import com.example.sneakylinky.service.serveranalysis.UrlAnalyzer
 import com.example.sneakylinky.service.urlanalyzer.CanonicalParseResult
 import com.example.sneakylinky.service.urlanalyzer.canonicalize
 import com.example.sneakylinky.service.urlanalyzer.isLocalSafe
@@ -18,7 +17,6 @@ import kotlinx.coroutines.withContext
 import android.Manifest
 import android.content.pm.PackageManager
 import android.widget.Toast
-import androidx.collection.emptyLongSet
 import androidx.core.content.ContextCompat
 
 

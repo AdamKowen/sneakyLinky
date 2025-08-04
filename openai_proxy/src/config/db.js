@@ -9,7 +9,9 @@
  *  DB_USER  – database user
  *  DB_PASS  – database password
  *  DB_NAME  – database/schema name
+ * //TODO: remove Cloud SQL specific comments and code if not using Cloud SQL
  *
+ * Required env vars (Cloud Run):
  * On Cloud Run you **omit DB_HOST** and instead provide:
  *  INSTANCE_CONNECTION_NAME – "project:region:instance"  (Cloud SQL socket)
  *  DB_USER / DB_PASS / DB_NAME (as before)
