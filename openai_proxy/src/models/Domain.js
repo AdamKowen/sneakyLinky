@@ -80,6 +80,16 @@ const Domain = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    
+    /**
+     * Counts how many times this domain was fetched / analysed.
+     * Increment with:  await Domain.increment('access_count', { by: 1, where: { name } });
+     */
+    access_count: {
+      type: DataTypes.BIGINT,
+      allowNull: false,
+      defaultValue: 0,
+    },
   },
   {
     /** Adds `createdAt` and `updatedAt` columns */

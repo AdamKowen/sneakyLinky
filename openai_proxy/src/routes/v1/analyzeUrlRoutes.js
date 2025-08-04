@@ -1,5 +1,5 @@
 const express = require('express');
-const { checkDomainDB, addDomainToDB } = require('../../services/domainService');
+const { checkDomainDB, addDomainToDB, deleteDomainFromDB } = require('../../services/domainService');
 const { extractDomain } = require('../../utils/parseDomain');
 const { analyzeUrl } = require('../../middleware/openai/openaiClient');
 const logger = require('../../utils/logger');
@@ -62,6 +62,9 @@ router.post('/analyze-url', async (req, res) => {
         source: 'local-db',
         domain,
       });
+    } else if (dbResult) {
+      await deleteDomainFromDB(domain);
+      logger.info(`[analyze-url] Stale record removed: ${domain}`);
     }
 
     const externalResult = await checkExternalDB(domain);
