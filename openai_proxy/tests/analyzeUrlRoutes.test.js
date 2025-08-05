@@ -5,6 +5,8 @@ const request = require('supertest');
 jest.mock('../src/services/domainService', () => ({
     checkDomainDB: jest.fn(),
     addDomainToDB: jest.fn(),
+    updateDomainSuspicion: jest.fn(),
+    deleteDomainFromDB: jest.fn(),
 }));
 jest.mock('../src/middleware/openai/openaiClient', () => ({
     analyzeUrl: jest.fn(),
@@ -13,6 +15,8 @@ jest.mock('../src/middleware/openai/openaiClient', () => ({
 const {
     checkDomainDB,
     addDomainToDB,
+    updateDomainSuspicion,
+    deleteDomainFromDB,
 } = require('../src/services/domainService');
 const { analyzeUrl } = require('../src/middleware/openai/openaiClient');
 
