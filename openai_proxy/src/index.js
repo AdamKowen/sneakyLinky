@@ -29,6 +29,10 @@ logger.debug('Express JSON middleware initialized');
  * Uses { force: true } to drop and recreate all tables.
  */
 if (process.env.NODE_ENV !== 'production') {
+  sequelize.sync({ force: true })
+    .then(() => logger.info('Database synchronized with { force: true }'))
+    .catch(err => logger.error(`Database sync error: ${err.message}`));
+} else {
   sequelize.sync({ alter: true })
     .then(() => logger.info('Database synchronized with { alter: true }'))
     .catch(err => logger.error(`Database sync error: ${err.message}`));
