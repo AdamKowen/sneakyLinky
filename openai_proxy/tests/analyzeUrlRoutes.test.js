@@ -11,6 +11,9 @@ jest.mock('../src/services/domainService', () => ({
 jest.mock('../src/middleware/openai/openaiClient', () => ({
     analyzeUrl: jest.fn(),
 }));
+jest.mock('../src/middleware/externalDB/gsbClient', () => ({
+    externalUrlAnalyzer: jest.fn(),
+}));
 
 const {
     checkDomainDB,
@@ -19,6 +22,7 @@ const {
     deleteDomainFromDB,
 } = require('../src/services/domainService');
 const { analyzeUrl } = require('../src/middleware/openai/openaiClient');
+const { externalUrlAnalyzer } = require('../src/middleware/externalDB/gsbClient');
 
 // ── import the express app AFTER mocks ──────────────────────────────
 const app = require('../src/index');          // app exported from src/index.js
@@ -166,6 +170,42 @@ describe('/v1/analyze-url integration', () => {
             .send({ url: 'http://singlelabel' }); // valid URL, not FQDN
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/Invalid domain format/);
+    });
+
+
+    test('external threat intelligence hit returns external-db result', async () => {
+        // Arrange
+        checkDomainDB.mockResolvedValue(null);
+        externalUrlAnalyzer.mockResolvedValue(1);
+
+        // Act
+        const res = await request(app)
+            .post('/v1/analyze-url')
+            .send({ url: 'https://malicious.com' });
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect(res.body.source).toBe('external-db');
+        expect(res.body.domain).toBe('malicious.com');
+        expect(res.body.phishing_score).toBe(1);
+    });
+
+    test('external threat intelligence miss falls through to OpenAI', async () => {
+        // Arrange
+        checkDomainDB.mockResolvedValue(null);
+        externalUrlAnalyzer.mockResolvedValue(null);
+        analyzeUrl.mockResolvedValue({ phishing_score: 0.5 });
+
+        // Act
+        const res = await request(app)
+            .post('/v1/analyze-url')
+            .send({ url: 'https://benign.com' });
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect(res.body.source).toBe('openai');
+        expect(res.body.domain).toBe('benign.com');
+        expect(res.body.phishing_score).toBe(0.5);
     });
 });
 

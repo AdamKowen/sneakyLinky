@@ -45,3 +45,4 @@ coverage/
 
 # ─── VSCode ─────────────────────────────────────────────────────────────────
 .vscode/                
+openai_proxy/Analyze-URL.postman_collection.json
