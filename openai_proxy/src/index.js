@@ -1,3 +1,4 @@
+
 /**
  * @file index.js
  * @description Entry point of the Express-based API application.
@@ -59,6 +60,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Routes
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,29 +69,40 @@ app.use((err, req, res, next) => {
  * @module routes/v1/analyzeUrlRoutes
  * @description API routes for analyzing URLs
  */
-const v1UrlRoutes = require('./routes/v1/analyzeUrlRoutes');
+const v1UrlRoutes = require('./routes/v1/analysis/analyzeUrlRoutes');
 
 /**
  * @module routes/v1/analyzeMessageRoutes
  * @description API routes for analyzing full messages
  */
-const v1MessageRoutes = require('./routes/v1/analyzeMessageRoutes');
+const v1MessageRoutes = require('./routes/v1/analysis/analyzeMessageRoutes');
 
 /**
  * @module routes/v1/domainRoutes
  * @description API routes for domain management
  */
-
 const domainRoutes = require('./routes/v1/domainRoutes');
+
+/**
+ * @module routes/v1/auth/registerRoutes
+ * @module routes/v1/auth/loginRoutes
+ * @description API routes for authentication (register/login)
+ */
+const registerRoutes = require('./routes/v1/auth/registerRoutes');
+const loginRoutes = require('./routes/v1/auth/loginRoutes');
+
 app.use('/v1', domainRoutes);
 logger.debug('Loaded /v1/domain routes');
 
-// Register routes
 app.use('/v1', v1UrlRoutes);
 logger.debug('Loaded /v1/analyze-url routes');
 
 app.use('/v1', v1MessageRoutes);
 logger.debug('Loaded /v1/analyze-message routes');
+
+app.use('/v1/auth', registerRoutes);
+app.use('/v1/auth', loginRoutes);
+logger.debug('Loaded /v1/auth/register and /v1/auth/login routes');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Global error handler
