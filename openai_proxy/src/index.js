@@ -32,6 +32,10 @@ if (process.env.NODE_ENV !== 'production') {
   sequelize.sync({ force: true })
     .then(() => logger.info('Database synchronized with { force: true }'))
     .catch(err => logger.error(`Database sync error: ${err.message}`));
+} else {
+  sequelize.sync({ alter: true })
+    .then(() => logger.info('Database synchronized with { alter: true }'))
+    .catch(err => logger.error(`Database sync error: ${err.message}`));
 }
 
 
@@ -70,6 +74,15 @@ const v1UrlRoutes = require('./routes/v1/analyzeUrlRoutes');
  * @description API routes for analyzing full messages
  */
 const v1MessageRoutes = require('./routes/v1/analyzeMessageRoutes');
+
+/**
+ * @module routes/v1/domainRoutes
+ * @description API routes for domain management
+ */
+
+const domainRoutes = require('./routes/v1/domainRoutes');
+app.use('/v1', domainRoutes);
+logger.debug('Loaded /v1/domain routes');
 
 // Register routes
 app.use('/v1', v1UrlRoutes);

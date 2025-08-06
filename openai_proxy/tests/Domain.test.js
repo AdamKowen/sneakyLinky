@@ -11,7 +11,7 @@ test('rejects invalid FQDN', async () => {
   // Arrange
   const input = 'bad domain';
 
-  // Act + Assert
+  // Act & Assert
   await expect(Domain.create({ name: input, suspicious: true }))
     .rejects.toThrow(/Invalid domain/);
 });
@@ -32,7 +32,7 @@ test('rejects empty domain', async () => {
   // Arrange
   const input = '';
 
-  // Act + Assert
+  // Act & Assert
   await expect(Domain.create({ name: input }))
     .rejects.toThrow(/Validation notEmpty/);
 });
@@ -41,7 +41,7 @@ test('rejects domain shorter than 3 characters', async () => {
   // Arrange
   const input = 'a.';
 
-  // Act + Assert
+  // Act & Assert
   await expect(Domain.create({ name: input }))
     .rejects.toThrow(/Validation len/);
 });
@@ -63,7 +63,7 @@ test('rejects domain longer than 253 characters', async () => {
   // Arrange
   const domain = 'a'.repeat(254);
 
-  // Act + Assert
+  // Act & Assert
   await expect(Domain.create({ name: domain }))
     .rejects.toThrow(/Validation len/);
 });
@@ -72,7 +72,7 @@ test('rejects domain without TLD', async () => {
   // Arrange
   const input = 'localhost';
 
-  // Act + Assert
+  // Act & Assert
   await expect(Domain.create({ name: input }))
     .rejects.toThrow(/Invalid domain name/);
 });
@@ -80,10 +80,10 @@ test('rejects domain without TLD', async () => {
 test('rejects same domain with different casing as duplicate (case-insensitive)', async () => {
   // Arrange
   const domain1 = 'TestDomain.com';
-  const domain2 = 'testdomain.com'; 
+  const domain2 = 'testdomain.com';
 
   // Act
-  await Domain.create({ name: domain1, suspicious: 0});
+  await Domain.create({ name: domain1, suspicious: 0 });
 
   // Assert
   await expect(Domain.create({ name: domain2, suspicious: 0 }))
@@ -95,7 +95,7 @@ test('rejects duplicate domain due to primary key constraint', async () => {
   const input = 'dup-example.com';
   await Domain.create({ name: input, suspicious: 0 });
 
-  // Act + Assert
+  // Act & Assert
   await expect(Domain.create({ name: input, suspicious: 0 }))
     .rejects.toThrow(/Validation error/i);
 });
@@ -110,4 +110,17 @@ test('sets createdAt and updatedAt automatically', async () => {
   // Assert
   expect(d.createdAt).toBeInstanceOf(Date);
   expect(d.updatedAt).toBeInstanceOf(Date);
+});
+
+test('increments access_count correctly', async () => {
+  // Arrange
+  const input = 'access-count.com';
+  const d = await Domain.create({ name: input, suspicious: 0 });
+
+  // Act
+  await Domain.increment('access_count', { by: 1, where: { name: input } });
+  const updated = await Domain.findByPk(input);
+
+  // Assert
+  expect(Number(updated.access_count)).toBe(1);
 });

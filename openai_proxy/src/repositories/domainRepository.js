@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 
 /**
  * Finds a domain record by its name (case-insensitive).
+ * also increments the access count by 1.
  *
  * This function trims and lowercases the input name,
  * and searches for an exact match in the database.
@@ -11,13 +12,18 @@ const logger = require('../utils/logger');
  * @returns {Promise<Domain|null>} A Promise that resolves to the Domain object if found, or null if not.
  */
 async function findByName(name) {
-  try {
-    const result = await Domain.findOne({ where: { name: name.trim().toLowerCase() } });
-    return result;
-  } catch (err) {
-    throw err;
+  const normalized = name.trim().toLowerCase();
+
+  // Check if the domain exists
+  const domain = await Domain.findOne({ where: { name: normalized } });
+
+  if (domain) {
+    // Increment the access count
+    await Domain.increment('access_count', { by: 1, where: { name: normalized } });
   }
+  return domain;   // returns null if not found
 }
+
 
 
 /**
@@ -37,7 +43,53 @@ async function addDomain(name, suspicious = 1) {
 }
 
 
+/**
+ * Marks a domain as suspicious / clean.
+ *
+ * @param {string} name        fully-qualified domain 
+ * @param {number} suspicious  0 = clean, 1 = suspicious  
+ * @returns {Promise<number>}  number of rows updated (0|1)
+ */
+async function updateSuspicion(name, suspicious = 1) {
+  try {
+    const [affectedRows] = await Domain.update(
+      { suspicious },
+      {
+        where: { name: name }, 
+        limit: 1                             // safety guard
+      }
+    );
+    return affectedRows;   // 1 - success, 0 - not found
+  } catch (err) {
+    throw err;
+  }
+}
+
+
+/**
+ * Deletes a domain record from the DB.
+ *
+ * @param {string} name  Fully-qualified domain (e.g. "example.com")
+ * @returns {Promise<number>}  number of rows deleted (0 = not found, 1 = deleted)
+ */
+async function deleteDomain(name) {
+  try {
+    const normalized = name.trim().toLowerCase();
+    const deletedRows = await Domain.destroy({
+      where: { name: normalized },
+      limit: 1          // safety guard
+    });
+    return deletedRows; // 1 on success, 0 if no such domain
+  } catch (err) {
+    throw err;
+  }
+}
+
+
+
 module.exports = { 
     findByName,
     addDomain,
+    updateSuspicion,
+    deleteDomain
  };

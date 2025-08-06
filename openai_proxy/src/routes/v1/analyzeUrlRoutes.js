@@ -1,6 +1,7 @@
 const express = require('express');
-const { checkDomainDB, addDomainToDB } = require('../../services/domainService');
+const { checkDomainDB, addDomainToDB, deleteDomainFromDB } = require('../../services/domainService');
 const { extractDomain } = require('../../utils/parseDomain');
+const { externalUrlAnalyzer } = require('../../middleware/externalDB/gsbClient');
 const { analyzeUrl } = require('../../middleware/openai/openaiClient');
 const logger = require('../../utils/logger');
 const validator = require('validator');
@@ -8,15 +9,27 @@ const validator = require('validator');
 const router = express.Router();
 
 /**
- * Checks external threat intelligence databases for a domain.
- * Currently not implemented – placeholder for future integration.
+ * Checks external threat intelligence via VirusTotal.
  *
- * @param {string} domain - The domain to check (e.g., "example.com").
- * @returns {Promise<null|object>} - A result object if found, or null if not.
+ * @param {string} url - The full URL to check.
+ * @returns {Promise<null|object>} - Result object if malicious, otherwise null.
  */
-async function checkExternalDB(domain) {
-  // TODO: implement external DB check (e.g., Google Safe Browsing, PhishTank)
-  return null;
+async function checkExternalDB(url) {
+  try {
+    const resultFlag = await externalUrlAnalyzer(url);
+    if (resultFlag === 1) {
+      return {
+        phishing_score: 1,
+        suspicion_reasons: ['This link has been identified as malicious by external threat intelligence'],
+        recommended_actions: [],
+        source: 'external-db'
+      };
+    }
+    return null;
+  } catch (err) {
+    logger.error(`External DB check failed: ${err.message}`);
+    return null;
+  }
 }
 
 /**
@@ -46,6 +59,7 @@ router.post('/analyze-url', async (req, res) => {
       return res.status(400).json({ error: 'Invalid domain format' });
     }
 
+    // Local database check
     const dbResult = await checkDomainDB(domain);
     const oneYearMs = 365 * 24 * 60 * 60 * 1000;
     const recentlyUpdated =
@@ -62,21 +76,23 @@ router.post('/analyze-url', async (req, res) => {
         source: 'local-db',
         domain,
       });
+    } else if (dbResult) {
+      await deleteDomainFromDB(domain);
+      logger.info(`[analyze-url] Stale record removed: ${domain}`);
     }
 
-    const externalResult = await checkExternalDB(domain);
+    // External threat intel check
+    logger.debug(`[analyze-url] Checking external threat intelligence for domain: ${domain}, url: ${url}`);
+    const externalResult = await checkExternalDB(url);
+    logger.debug(`[analyze-url] External threat intelligence result for domain: ${domain}:`, externalResult);
     if (externalResult) {
+      await addDomainToDB(domain, externalResult.phishing_score > 0.5 ? 1 : 0);
       const duration = Date.now() - start;
       logger.info(`[OUT] /analyze-url | source: external-db | domain: ${domain} | duration: ${duration}ms`);
-      return res.json({
-        phishing_score: externalResult.phishing_score,
-        suspicion_reasons: externalResult.suspicion_reasons || [],
-        recommended_actions: externalResult.recommended_actions || [],
-        source: 'external-db',
-        domain,
-      });
+      return res.json({ ...externalResult, domain });
     }
 
+    // AI-based analysis
     const aiResult = await analyzeUrl(url);
 
     try {
@@ -92,11 +108,7 @@ router.post('/analyze-url', async (req, res) => {
     const duration = Date.now() - start;
     logger.info(`[OUT] /analyze-url | source: openai | domain: ${domain} | score: ${aiResult.phishing_score} | duration: ${duration}ms`);
 
-    return res.json({
-      ...aiResult,
-      source: 'openai',
-      domain,
-    });
+    return res.json({ ...aiResult, source: 'openai', domain });
 
   } catch (err) {
     logger.error(`Error analyzing URL: ${err.message}`);
