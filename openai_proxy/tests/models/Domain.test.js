@@ -1,6 +1,6 @@
 // Domain.test.js
-const { sequelize } = require('../src/config/db');
-const Domain = require('../src/models/Domain');
+const { sequelize } = require('../../src/config/db');
+const Domain = require('../../src/models/Domain');
 
 beforeAll(() => sequelize.sync({ force: true }));
 afterAll(() => sequelize.close());

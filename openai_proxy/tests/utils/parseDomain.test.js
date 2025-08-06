@@ -1,5 +1,5 @@
 // tests/parseDomain.test.js
-const { extractDomain } = require('../src/utils/parseDomain');
+const { extractDomain } = require('../../src/utils/parseDomain');
 
 describe('extractDomain', () => {
   test('returns hostname from https URL', () => {

@@ -2,14 +2,14 @@
 const request = require('supertest');
 
 // ── mock layer dependencies ──────────────────────────────────────────
-jest.mock('../src/middleware/openai/openaiClient', () => ({
+jest.mock('../../src/middleware/openai/openaiClient', () => ({
     analyzeMessage: jest.fn(),
 }));
 
-const { analyzeMessage } = require('../src/middleware/openai/openaiClient');
+const { analyzeMessage } = require('../../src/middleware/openai/openaiClient');
 
 // ── import the express app AFTER mocks ──────────────────────────────
-const app = require('../src/index');
+const app = require('../../src/index');
 
 const MESSAGE_MAX_TOKENS = parseInt(process.env.MESSAGE_MAX_TOKENS || '1000', 10);
 
@@ -104,7 +104,7 @@ describe('/v1/analyze-message integration', () => {
 // Optional: close DB connections if needed
 afterAll(async () => {
     try {
-        const { sequelize } = require('../src/config/db');
+        const { sequelize } = require('../../src/config/db');
         if (sequelize && sequelize.close) {
             await sequelize.close();
         }

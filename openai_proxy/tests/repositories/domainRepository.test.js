@@ -1,7 +1,8 @@
-const { addDomain, findByName } = require('../src/repositories/domainRepository');
-const Domain = require('../src/models/Domain');
 
-jest.mock('../src/models/Domain');
+const { addDomain, findByName } = require('../../src/repositories/domainRepository');
+const Domain = require('../../src/models/Domain');
+
+jest.mock('../../src/models/Domain');
 
 describe('domainRepository', () => {
   afterEach(() => jest.clearAllMocks());
