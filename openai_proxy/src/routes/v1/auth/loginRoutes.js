@@ -21,8 +21,21 @@ router.post('/login', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-    if (!validator.isEmail(email)) {                  
+    if (!validator.isEmail(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Root admin credentials from ENV
+    const rootEmail = process.env.ADMIN_EMAIL;
+    const rootPasswordHash = process.env.ADMIN_PASSWORD_HASH;
+
+    if (email === rootEmail && await bcrypt.compare(password, rootPasswordHash)) {
+      const payload = { id: 0, email: rootEmail, role: 'admin' };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN || '2h',
+      });
+      logger.info(`[LOGIN] Success for ROOT admin: ${email}`);
+      return res.json({ token });
     }
 
     /* ---------- Authenticate ---------- */
