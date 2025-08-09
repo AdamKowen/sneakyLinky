@@ -5,14 +5,11 @@ const logger       = require('../../../utils/logger');
 const authenticateJWT = require('../../../middleware/auth/verifyToken');
 
 const router = express.Router();
-const isProd = process.env.NODE_ENV === 'production';
 
 /**
  * Middlewares for /register route.
- * • production  → JWT + admin-role required
- * • development → open
  */
-const guards = isProd ? [authenticateJWT] : [];
+const guards = [authenticateJWT];
 
 /*───────────────────────────────  POST /v1/auth/register  ───────────────────────────────*/
 router.post('/register', ...guards, async (req, res) => {
