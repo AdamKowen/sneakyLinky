@@ -19,6 +19,7 @@ import com.example.sneakylinky.util.*
 import android.net.Uri
 import android.util.Log
 import com.example.sneakylinky.service.LinkChecker
+import com.example.sneakylinky.service.MyAccessibilityService
 import com.example.sneakylinky.service.aianalysis.UrlAnalyzer
 import com.example.sneakylinky.service.urlanalyzer.CanonUrl
 import com.example.sneakylinky.service.urlanalyzer.canonicalize
@@ -65,8 +66,9 @@ class MainActivity : AppCompatActivity() {
         cardAdapter = CardAdapter(
             this,
             onCheckUrl = { raw -> lifecycleScope.launch { resolveAndProcess(raw) } },
-            onAnalyzeText = { pasted -> analyzeText(pasted) }     // **חדש**
+            onAnalyzeText = { pasted -> analyzeText(pasted) }     // new
         )
+        MyAccessibilityService.setActivity(this)
 
 
         val viewPager = findViewById<ViewPager2>(R.id.viewPager).apply {
@@ -231,5 +233,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // public api to update paste text in the adapter
+    fun updatePasteTextInAdapter(text: String) {
+        cardAdapter?.updatePasteText(text)
+    }
 
 }

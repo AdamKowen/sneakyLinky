@@ -31,6 +31,9 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
     private var pendingUrlForCard1: String? = null
 
 
+    // Paste
+    private var pendingTextForCardPaste: String? = null
+
     companion object {
         private const val TYPE_CARD_1 = 0
         private const val TYPE_CARD_PASTE = 1
@@ -104,6 +107,11 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
 
             }
             is PasteViewHolder -> {
+                pendingTextForCardPaste?.let { txt ->
+                    holder.edit.setText(txt)
+                    pendingTextForCardPaste = null
+                }
+
                 // English hint for the empty EditText
                 holder.edit.hint = "Enter text here"
                 // English label for the analyze button
@@ -209,6 +217,11 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
             .apply()
     }
 
+    fun updatePasteText(text: String) {
+        pendingTextForCardPaste = text
+        // force rebind of card #1=TYPE_CARD_PASTE (index=1)
+        notifyItemChanged(1)
+    }
 
     // 1. Creating an inner adapter for ViewPager2 to show browser names
     // 2. Scroll to the saved/default index without animation
@@ -217,3 +230,6 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
         val textView: TextView = itemView.findViewById(R.id.browserNameText)
     }
 }
+
+
+

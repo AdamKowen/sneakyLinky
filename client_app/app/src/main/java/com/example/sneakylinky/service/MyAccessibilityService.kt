@@ -7,7 +7,11 @@ import com.example.sneakylinky.LinkContextCache
 import com.example.sneakylinky.ui.MainActivity
 import java.lang.ref.WeakReference
 
+
+
+
 class MyAccessibilityService : AccessibilityService() {
+
 
     companion object {
         private var activityRef: WeakReference<MainActivity>? = null
@@ -16,18 +20,37 @@ class MyAccessibilityService : AccessibilityService() {
             activityRef = WeakReference(activity)
         }
     }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        if (event.eventType != AccessibilityEvent.TYPE_VIEW_CLICKED) return
-        val src = event.source ?: return
 
-        val url = Regex("""https?://\S+""").find(event.text.joinToString(" "))
-            ?: findLinkInNode(src)
+        val relevant = event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
+                event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
+                event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+        if (!relevant) return
 
-        if (url != null) {
-            val contextTxt = "${parentText(src)} ${src.text}"
-            LinkContextCache.lastLink       = url.toString()
-            LinkContextCache.surroundingTxt = contextTxt
-            Log.d("AccService", "Saved context: $contextTxt")
+        val root = event.source ?: rootInActiveWindow ?: return
+        val treeText = collectNodeText(root)
+
+
+        val link = Regex("""https?://\S+""").find(treeText)?.value ?: return
+
+
+        val nodeWithLink   = findNodeWithLink(root, link)
+        val contextNode    = nodeWithLink?.parent ?: nodeWithLink
+        val rawContextText = contextNode?.text?.toString()?.trim() ?: treeText
+
+
+        val contextTxt = rawContextText
+            .replace(Regex("""\s+"""), " ")      // רווח אחד
+            .replace(Regex("""(https?://\S+)\s+(\1)+""")) { it.groupValues[1] } // חזרתיות של אותו קישור
+
+
+        LinkContextCache.lastLink       = link
+        LinkContextCache.surroundingTxt = contextTxt
+        Log.d("AccService", "Saved context: $contextTxt")
+
+        activityRef?.get()?.let { act ->
+            act.runOnUiThread { act.updatePasteTextInAdapter(contextTxt) }
         }
     }
 
@@ -68,7 +91,7 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
 
-    /** מחזיר את הטקסט של ה-parent של node (אם יש) */
+
     private fun parentText(node: AccessibilityNodeInfo?): String =
         node?.parent?.text?.toString().orEmpty()
 
@@ -76,5 +99,28 @@ class MyAccessibilityService : AccessibilityService() {
     override fun onInterrupt() {
         Log.d("MyAccessibilityService", "Accessibility Service Interrupted")
     }
+
+
+
+    private fun collectNodeText(node: AccessibilityNodeInfo?): String {
+        if (node == null) return ""
+        val sb = StringBuilder()
+        node.text?.let { sb.append(it).append(" ") }
+        node.contentDescription?.let { sb.append(it).append(" ") }
+        for (i in 0 until node.childCount) {
+            sb.append(collectNodeText(node.getChild(i)))
+        }
+        return sb.toString()
+    }
+
+    private fun findNodeWithLink(node: AccessibilityNodeInfo?, link: String): AccessibilityNodeInfo? {
+        if (node == null) return null
+        if (node.text?.contains(link) == true) return node
+        for (i in 0 until node.childCount) {
+            findNodeWithLink(node.getChild(i), link)?.let { return it }
+        }
+        return null
+    }
+
 }
 
