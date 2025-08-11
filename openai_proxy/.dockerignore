@@ -31,3 +31,7 @@ Thumbs.db
 # ----------------- build artefacts -----------------
 dist/
 build/
+
+
+load_domains.js
+by.js

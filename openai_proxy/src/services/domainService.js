@@ -1,5 +1,17 @@
-const { findByName, addDomain } = require('../repositories/domainRepository');
+const {
+  findByName,
+  addDomain,
+  updateSuspicion,
+  deleteDomain,
+  findFirstNRepo,
+  countDomains,
+  countSuspiciousDomains,
+  searchBySubstringRepo
+} = require('../repositories/domainRepository');
+
 const logger = require('../utils/logger');
+
+const { rawAttributes } = require('../models/Domain');
 
 async function checkDomainDB(name) {
   logger.debug(`[checkDomainDB] Checking domain: ${name}`);
@@ -100,9 +112,98 @@ async function deleteDomainFromDB(name) {
 }
 
 
+//******************************************************************************//
+//-----------------------------------getFirstN-----------------------------------//
+//******************************************************************************//
+
+/** * Validates and normalizes the limit parameter.
+ *
+ * @param {number|string} nLike - The limit value to validate.
+ */
+function validateLimit(nLike) {
+  const n = parseInt(nLike, 10);
+  if (isNaN(n) || n <= 0) {
+    const e = new Error('Invalid limit number');
+    e.statusCode = 400;
+    e.publicMessage = 'Invalid limit number';
+    throw e;
+  }
+  return n;
+}
+
+function validateSort(sortByLike = 'createdAt', dirLike = 'ASC') {
+  const allowedCols = Object.keys(rawAttributes);
+  const sortBy = String(sortByLike);
+  if (!allowedCols.includes(sortBy)) {
+    const e = new Error('Invalid sort column');
+    e.statusCode = 400;
+    e.publicMessage = 'Invalid sort column';
+    throw e;
+  }
+
+  const dir = String(dirLike).toUpperCase();
+  if (!['ASC', 'DESC'].includes(dir)) {
+    const e = new Error('Invalid sort direction');
+    e.statusCode = 400;
+    e.publicMessage = 'Invalid sort direction (use ASC or DESC)';
+    throw e;
+  }
+  return { sortBy, dir };
+}
+
+async function getFirstN(nLike, sortBy, dir) {
+  const n = validateLimit(nLike);
+  const { sortBy: s, dir: d } = validateSort(sortBy, dir);
+  logger.debug(`[getFirstN] limit=${n}, sortBy=${s}, dir=${d}`);
+  return findFirstNRepo(n, s, d);
+}
+
+
+async function getDomainsCount() {
+  try {
+    const total = await countDomains();
+    logger.debug(`[getDomainsCount] total=${total}`);
+    return total;
+  } catch (err) {
+    logger.error(`[getDomainsCount] DB error: ${err.message}`);
+    throw err;
+  }
+}
+
+
+async function searchBySubstring(qLike) {
+  const q = String(qLike || '').trim().toLowerCase();
+  if (!q) {
+    const e = new Error('Invalid query');
+    e.statusCode = 400;
+    e.publicMessage = 'Invalid query';
+    throw e;
+  }
+  logger.debug(`[searchBySubstring] q="${q}"`);
+  return searchBySubstringRepo(q);
+}
+
+async function getDomainStats() {
+  try {
+    const [total, suspicious] = await Promise.all([
+      countDomains(),
+      countSuspiciousDomains()
+    ]);
+    const safe = total - suspicious;
+    return { total, suspicious, safe };
+  } catch (err) {
+    logger.error(`[getDomainStats] DB error: ${err.message}`);
+    throw err;
+  }
+}
+
 module.exports = { 
     checkDomainDB,
     addDomainToDB,
     updateDomainSuspicion,
-    deleteDomainFromDB
- };
+    deleteDomainFromDB,
+    getFirstN,
+    getDomainsCount,
+    searchBySubstring,
+    getDomainStats
+};

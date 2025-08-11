@@ -1,0 +1,153 @@
+/* Results table styling */
+.table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.results-table th,
+.results-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.results-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.results-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.results-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Column-specific styling */
+.domain-name {
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  color: #2196f3;
+}
+
+.suspicious {
+  font-weight: 500;
+}
+
+.suspicious-yes {
+  color: #f44336;
+}
+
+.suspicious-no {
+  color: #4caf50;
+}
+
+.access-count {
+  text-align: center;
+  font-weight: 500;
+}
+
+.timestamp {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Actions column */
+.actions {
+  text-align: center;
+  width: 120px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+}
+
+.toggle-btn.btn-suspicious {
+  background: rgba(255, 152, 0, 0.1);
+  color: #ff9800;
+}
+
+.toggle-btn.btn-suspicious:hover {
+  background: rgba(255, 152, 0, 0.2);
+}
+
+.toggle-btn.btn-safe {
+  background: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}
+
+.toggle-btn.btn-safe:hover {
+  background: rgba(76, 175, 80, 0.2);
+}
+
+.delete-btn {
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+}
+
+.delete-btn:hover {
+  background: rgba(244, 67, 54, 0.2);
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  .results-table {
+    font-size: 0.85rem;
+  }
+  
+  .results-table th,
+  .results-table td {
+    padding: 8px 12px;
+  }
+  
+  .timestamp {
+    display: none;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .action-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+}

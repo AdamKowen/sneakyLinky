@@ -1,9 +1,9 @@
 const express = require('express');
-const { checkDomainDB, addDomainToDB, deleteDomainFromDB } = require('../../services/domainService');
-const { extractDomain } = require('../../utils/parseDomain');
-const { externalUrlAnalyzer } = require('../../middleware/externalDB/gsbClient');
-const { analyzeUrl } = require('../../middleware/openai/openaiClient');
-const logger = require('../../utils/logger');
+const { checkDomainDB, addDomainToDB, deleteDomainFromDB } = require('../../../services/domainService');
+const { extractDomain } = require('../../../utils/parseDomain');
+const { externalUrlAnalyzer } = require('../../../middleware/externalDB/gsbClient');
+const { analyzeUrl } = require('../../../middleware/openai/openaiClient');
+const logger = require('../../../utils/logger');
 const validator = require('validator');
 
 const router = express.Router();

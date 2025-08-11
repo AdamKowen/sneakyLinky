@@ -6,8 +6,8 @@
 
 const express = require('express');
 const router = express.Router();
-const { analyzeMessage } = require('../../middleware/openai/openaiClient');
-const logger = require('../../utils/logger');
+const { analyzeMessage } = require('../../../middleware/openai/openaiClient');
+const logger = require('../../../utils/logger');
 
 require('dotenv').config();
 
