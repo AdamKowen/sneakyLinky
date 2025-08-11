@@ -1,4 +1,3 @@
-
 /**
  * @file index.js
  * @description Entry point of the Express-based API application.
@@ -11,6 +10,20 @@ const app = express();
 const logger = require('./utils/logger');
 const { sequelize } = require('./config/db');
 
+const cors = require('cors');
+
+
+const corsOptions = {
+  origin: true, // Allow all origins
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Middleware
 // ─────────────────────────────────────────────────────────────────────────────
@@ -21,6 +34,7 @@ const { sequelize } = require('./config/db');
 app.use(express.json());
 logger.debug('Express JSON middleware initialized');
 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Database sync (development only)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,8 +44,8 @@ logger.debug('Express JSON middleware initialized');
  * Uses { force: true } to drop and recreate all tables.
  */
 if (process.env.NODE_ENV !== 'production') {
-  sequelize.sync({ force: true })
-    .then(() => logger.info('Database synchronized with { force: true }'))
+  sequelize.sync({ alter: true })
+    .then(() => logger.info('Database synchronized with { alter: true }'))
     .catch(err => logger.error(`Database sync error: ${err.message}`));
 } else {
   sequelize.sync({ alter: true })
@@ -81,7 +95,7 @@ const v1MessageRoutes = require('./routes/v1/analysis/analyzeMessageRoutes');
  * @module routes/v1/domainRoutes
  * @description API routes for domain management
  */
-const domainRoutes = require('./routes/v1/domainRoutes');
+const domainRoutes = require('./routes/v1/domains/domainRoutes');
 
 /**
  * @module routes/v1/auth/registerRoutes

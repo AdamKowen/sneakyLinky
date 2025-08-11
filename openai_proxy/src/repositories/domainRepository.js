@@ -1,5 +1,5 @@
 const Domain = require('../models/Domain');
-const logger = require('../utils/logger');
+const { Op } = require('sequelize');
 
 /**
  * Finds a domain record by its name (case-insensitive).
@@ -86,10 +86,32 @@ async function deleteDomain(name) {
 }
 
 
+async function findFirstNRepo(n, sortBy, dir) {
+  return Domain.findAll({ order: [[sortBy, dir]], limit: n });
+}
 
-module.exports = { 
+
+async function countDomains() {
+  return Domain.count();
+}
+
+
+async function searchBySubstringRepo(q) {
+  return Domain.findAll({
+    where: { name: { [Op.iLike]: `%${q}%` } },
+    order: [['createdAt', 'ASC']],
+  });
+}
+
+
+
+
+module.exports = {
     findByName,
     addDomain,
     updateSuspicion,
-    deleteDomain
- };
+    deleteDomain,
+    findFirstNRepo,
+    countDomains,
+    searchBySubstringRepo
+};
