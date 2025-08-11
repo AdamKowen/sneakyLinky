@@ -5,6 +5,7 @@ const {
   deleteDomain,
   findFirstNRepo,
   countDomains,
+  countSuspiciousDomains,
   searchBySubstringRepo
 } = require('../repositories/domainRepository');
 
@@ -182,10 +183,19 @@ async function searchBySubstring(qLike) {
   return searchBySubstringRepo(q);
 }
 
-
-
-
-
+async function getDomainStats() {
+  try {
+    const [total, suspicious] = await Promise.all([
+      countDomains(),
+      countSuspiciousDomains()
+    ]);
+    const safe = total - suspicious;
+    return { total, suspicious, safe };
+  } catch (err) {
+    logger.error(`[getDomainStats] DB error: ${err.message}`);
+    throw err;
+  }
+}
 
 module.exports = { 
     checkDomainDB,
@@ -194,5 +204,6 @@ module.exports = {
     deleteDomainFromDB,
     getFirstN,
     getDomainsCount,
-    searchBySubstring
+    searchBySubstring,
+    getDomainStats
 };

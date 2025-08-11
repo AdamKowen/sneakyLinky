@@ -96,6 +96,11 @@ async function countDomains() {
 }
 
 
+async function countSuspiciousDomains() {
+  return Domain.count({ where: { suspicious: 1 } });
+}
+
+
 async function searchBySubstringRepo(q) {
   return Domain.findAll({
     where: { name: { [Op.iLike]: `%${q}%` } },
@@ -113,5 +118,6 @@ module.exports = {
     deleteDomain,
     findFirstNRepo,
     countDomains,
+    countSuspiciousDomains,
     searchBySubstringRepo
 };

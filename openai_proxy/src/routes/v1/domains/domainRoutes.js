@@ -10,7 +10,8 @@ const {
     addDomainToDB,
     getFirstN,
     getDomainsCount,
-    searchBySubstring
+    searchBySubstring,
+    getDomainStats
 } = require('../../../services/domainService');
 
 
@@ -26,6 +27,7 @@ router.use('/domain', verifyToken);
  */
 router.get('/domain/limit/:n', async (req, res) => {
   try {
+    logger.info(`GET /domain/limit/${req.params.n} called`);
     const { sortBy, dir } = req.query;
     const rows = await getFirstN(req.params.n, sortBy, dir);
     return res.json(rows);
@@ -98,12 +100,12 @@ router.delete('/domain/:name', async (req, res) => {
  * GET /v1/domain/count
  * Returns the total number of rows in the Domain table.
  */
-router.get('/domain/count', async (_req, res) => {
+router.get('/domain/stats', async (_req, res) => {
   try {
-    const total = await getDomainsCount();
-    return res.json({ count: total });
+    const stats = await getDomainStats();
+    return res.json(stats); // { total, suspicious, safe }
   } catch (err) {
-    logger.error(`GET /domain/count failed: ${err.message}`);
+    logger.error(`GET /domain/stats failed: ${err.message}`);
     return res.status(500).json({ error: 'internal error' });
   }
 });
