@@ -81,6 +81,67 @@
   margin-top: 8px;
 }
 
+/* 📱 MOBILE & TABLET RESPONSIVE */
 @media (max-width: 1024px) {
-  .card, .card-span { grid-column: span 12; }
+  .dashboard-grid {
+    gap: 12px;
+  }
+  
+  .card, .card-span {
+    grid-column: span 12; /* כל הכרטיסים ברוחב מלא */
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .card-title {
+    font-size: 16px;
+  }
+  
+  .card-sub {
+    font-size: 13px;
+  }
+  
+  .inline {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .inline label {
+    min-width: auto;
+    font-size: 14px;
+    text-align: left;
+  }
+  
+  .btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    min-height: 48px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr; /* סטטיסטיקות בעמודה */
+    gap: 12px;
+  }
+  
+  .stat-item {
+    padding: 16px;
+  }
+  
+  .stat-number {
+    font-size: 20px;
+  }
+}
+
+/* 📱 רק מסכים קטנים */
+@media (max-width: 480px) {
+  .card-title {
+    font-size: 14px;
+  }
+  
+  .btn {
+    font-size: 14px;
+    padding: 12px;
+  }
 }
