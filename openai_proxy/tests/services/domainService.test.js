@@ -1,9 +1,9 @@
 // tests/domainService.test.js
-const service = require('../src/services/domainService');
-const repo = require('../src/repositories/domainRepository');
+const service = require('../../src/services/domainService');
+const repo = require('../../src/repositories/domainRepository');
 
 //  Mock the repository functions
-jest.mock('../src/repositories/domainRepository', () => ({
+jest.mock('../../src/repositories/domainRepository', () => ({
   findByName: jest.fn(),
   addDomain : jest.fn(),
 }));

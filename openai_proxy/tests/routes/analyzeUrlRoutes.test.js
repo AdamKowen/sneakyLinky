@@ -2,16 +2,16 @@
 const request = require('supertest');
 
 // ── mock layer dependencies ──────────────────────────────────────────
-jest.mock('../src/services/domainService', () => ({
+jest.mock('../../src/services/domainService', () => ({
     checkDomainDB: jest.fn(),
     addDomainToDB: jest.fn(),
     updateDomainSuspicion: jest.fn(),
     deleteDomainFromDB: jest.fn(),
 }));
-jest.mock('../src/middleware/openai/openaiClient', () => ({
+jest.mock('../../src/middleware/openai/openaiClient', () => ({
     analyzeUrl: jest.fn(),
 }));
-jest.mock('../src/middleware/externalDB/gsbClient', () => ({
+jest.mock('../../src/middleware/externalDB/gsbClient', () => ({
     externalUrlAnalyzer: jest.fn(),
 }));
 
@@ -20,12 +20,12 @@ const {
     addDomainToDB,
     updateDomainSuspicion,
     deleteDomainFromDB,
-} = require('../src/services/domainService');
-const { analyzeUrl } = require('../src/middleware/openai/openaiClient');
-const { externalUrlAnalyzer } = require('../src/middleware/externalDB/gsbClient');
+} = require('../../src/services/domainService');
+const { analyzeUrl } = require('../../src/middleware/openai/openaiClient');
+const { externalUrlAnalyzer } = require('../../src/middleware/externalDB/gsbClient');
 
 // ── import the express app AFTER mocks ──────────────────────────────
-const app = require('../src/index');          // app exported from src/index.js
+const app = require('../../src/index');          // app exported from src/index.js
 
 // helper to build ISO dates
 const daysAgoISO = (days) =>
@@ -212,7 +212,7 @@ describe('/v1/analyze-url integration', () => {
 afterAll(async () => {
   // Try to close any open DB connections if use Sequelize
   try {
-    const { sequelize } = require('../src/config/db');
+    const { sequelize } = require('../../src/config/db');
     if (sequelize && sequelize.close) {
       await sequelize.close();
     }
