@@ -47,3 +47,13 @@ coverage/
 .vscode/                
 openai_proxy/Analyze-URL.postman_collection.json
 openai_proxy/src/by.js
+web_ui/.vite/deps/chunk-B2WE2YPZ.js
+web_ui/.vite/deps/chunk-B2WE2YPZ.js.map
+web_ui/.vite/deps/react_jsx-dev-runtime.js
+web_ui/.vite/deps/react_jsx-dev-runtime.js.map
+web_ui/.vite/deps/react_jsx-runtime.js
+web_ui/.vite/deps/react_jsx-runtime.js.map
+web_ui/.vite/deps/react-dom.js
+web_ui/.vite/deps/react-dom.js.map
+web_ui/.vite/deps/react.js
+web_ui/.vite/deps/react.js.map
