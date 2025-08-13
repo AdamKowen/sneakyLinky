@@ -51,6 +51,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
+
         android.util.Log.d("ACT_TRACE", "Main started")
 
         super.onCreate(savedInstanceState)
@@ -109,6 +110,9 @@ class MainActivity : AppCompatActivity() {
 
         val browsers = getInstalledBrowsers(this@MainActivity)
         Log.d("Browsers", "Detected browsers: ${browsers.joinToString { it.activityInfo.packageName }}")
+
+
+
     }
 
     override fun onResume() {

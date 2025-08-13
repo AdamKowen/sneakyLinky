@@ -39,7 +39,11 @@
             android:padding="12dp"
             android:textColor="@android:color/white"
             android:textColorHint="@color/near_white"
-            android:background="@drawable/bg_light_purple" />
+            android:background="@drawable/bg_light_purple"
+            android:overScrollMode="always"
+            android:scrollbars="vertical"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
 
         <!-- thin white underline below the EditText -->
         <View
