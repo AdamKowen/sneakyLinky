@@ -69,7 +69,7 @@
 
 .stat-label {
   font-size: 12px;
-  color: #6b7280;
+  color: #4e5563;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -79,6 +79,30 @@
   color: #9ca3af;
   text-align: center;
   margin-top: 8px;
+}
+
+/* Domain stats specific tweaks */
+.domain-stats-card .stats-grid {
+  align-items: stretch;
+}
+.domain-stats-card .stat-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 72px;
+}
+.domain-stats-card .stat-number {
+  font-variant-numeric: tabular-nums; /* fixed-width digits */
+  letter-spacing: .5px;
+  display: block;
+}
+.domain-stats-card .stat-label {
+  margin-top: 2px;
+  color: #374151; /* darker gray */
+}
+/* Force total (first) number to dark color */
+.domain-stats-card .stat-item:first-child .stat-number {
+  color: #111827; /* dark text */
 }
 
 /* 📱 MOBILE & TABLET RESPONSIVE */
