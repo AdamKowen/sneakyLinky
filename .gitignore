@@ -57,3 +57,5 @@ web_ui/.vite/deps/react-dom.js
 web_ui/.vite/deps/react-dom.js.map
 web_ui/.vite/deps/react.js
 web_ui/.vite/deps/react.js.map
+openai_proxy/src/index.js
+openai_proxy/src/re.js

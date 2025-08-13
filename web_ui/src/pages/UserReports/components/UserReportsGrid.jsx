@@ -1,3 +1,3 @@
-export default function DashboardGrid({ children }) {
-  return <div className="dashboard-grid">{children}</div>;
+export default function UserReportsGrid({ children }) {
+  return <div className="userreports-grid">{children}</div>;
 }
