@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { updateAdminDecision } from '../../../services/userReports';
-// import { updateDomainSuspicious /*, createDomain */ } from '../../../services/domain'; // TODO: Enable when you also want to update the domains table
+import { updateDomainSuspicious /*, createDomain */ } from '../../../services/domain'; // TODO: Enable when you also want to update the domains table
 
 export default function UserReportCard({ report, onUpdate }) {
   const [adminDecision, setAdminDecision] = useState(
@@ -22,15 +22,14 @@ export default function UserReportCard({ report, onUpdate }) {
       console.log(`Admin decision for report ${report.id}: ${decisionValue}`);
       
       // TODO: Domain table update (disabled for now).
-      // try {
-      //   const hostname = new URL(report.url).hostname;
-      //   // If you need to ensure the domain exists: first try to create it (ignore error if it already exists)
-      //   // await createDomain({ name: hostname, suspicious: decisionValue === 1 });
-      //   await updateDomainSuspicious(hostname, decisionValue === 1);
-      //   console.log('Domain suspicious flag updated for', hostname, '=>', decisionValue === 1);
-      // } catch (domainErr) {
-      //   console.error('Failed updating domain suspicious flag', domainErr);
-      // }
+      try {
+        const hostname = new URL(report.url).hostname;
+        // await createDomain({ name: hostname, suspicious: decisionValue === 1 });
+        await updateDomainSuspicious(hostname, decisionValue === 1);
+        console.log('Domain suspicious flag updated for', hostname, '=>', decisionValue === 1);
+      } catch (domainErr) {
+        console.error('Failed updating domain suspicious flag', domainErr);
+      }
 
       // Start removal animation
       setIsRemoving(true);

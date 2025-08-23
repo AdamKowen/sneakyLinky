@@ -128,7 +128,8 @@ function validateLimit(nLike) {
     e.publicMessage = 'Invalid limit number';
     throw e;
   }
-  return n;
+
+  return n > 1000 ? 1000 : n;  // cap at 1000
 }
 
 function validateSort(sortByLike = 'createdAt', dirLike = 'ASC') {
