@@ -105,6 +105,12 @@ const domainRoutes = require('./routes/v1/domains/domainRoutes');
 const registerRoutes = require('./routes/v1/auth/registerRoutes');
 const loginRoutes = require('./routes/v1/auth/loginRoutes');
 
+/**
+ * @module routes/v1/userReports/userReports
+ * @description API routes for user reports
+ */
+const userReportsRoutes = require('./routes/v1/userReports/userReportsRoutes');
+
 app.use('/v1', domainRoutes);
 logger.debug('Loaded /v1/domain routes');
 
@@ -117,6 +123,9 @@ logger.debug('Loaded /v1/analyze-message routes');
 app.use('/v1/auth', registerRoutes);
 app.use('/v1/auth', loginRoutes);
 logger.debug('Loaded /v1/auth/register and /v1/auth/login routes');
+
+app.use('/v1/userReports', userReportsRoutes);
+logger.debug('Loaded /v1/userReports routes');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Global error handler

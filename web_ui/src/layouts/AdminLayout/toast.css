@@ -60,3 +60,20 @@
 .toast-fade-out {
   animation: fadeSlideOut 0.3s ease forwards;
 }
+
+
+/* 📱 MOBILE */
+@media (max-width: 768px) {
+  .toast-area {
+    top: 0.5rem;
+    right: 0.5rem;
+    left: 0.5rem;
+  }
+  
+  .toast {
+    min-width: auto;
+    max-width: none;
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+}
