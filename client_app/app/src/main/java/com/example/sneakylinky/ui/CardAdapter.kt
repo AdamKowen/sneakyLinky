@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -103,6 +104,18 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
                     val raw = holder.editText.text.toString()
                     onCheckUrl(raw)          // delegate to activity – no coroutines here
                 }
+
+                // in Card1ViewHolder binding (comments in English only)
+                holder.editText.apply {
+                    setHorizontallyScrolling(true)
+                    isHorizontalScrollBarEnabled = true
+                    // Optional: auto-scroll to end when focused
+                    setOnFocusChangeListener { _, hasFocus ->
+                        if (hasFocus) setSelection(text?.length ?: 0)
+                    }
+                    imeOptions = EditorInfo.IME_ACTION_DONE
+                }
+
 
 
             }

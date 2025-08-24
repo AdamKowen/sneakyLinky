@@ -32,10 +32,15 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:hint="Enter Link Here"
+            android:singleLine="true"
             android:textColorHint="@color/near_white"
             android:textColor="@android:color/white"
             android:backgroundTint="@android:color/white"
-            android:backgroundTintMode="src_in"/>
+            android:backgroundTintMode="src_in"
+            android:inputType="textUri|textNoSuggestions"
+            android:ellipsize="end"
+            android:scrollbars="horizontal"
+            android:fadingEdgeLength="12dp" />
 
 
         <!-- 3. check button -->

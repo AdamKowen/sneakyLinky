@@ -24,6 +24,7 @@
         <activity
             android:name=".ui.LinkRelayActivity"
             android:exported="true"
+            android:windowSoftInputMode="stateHidden|adjustResize"
             android:theme="@style/Theme.Sneaky.NoDisplay"
             android:launchMode="singleTask"
             android:noHistory="true">

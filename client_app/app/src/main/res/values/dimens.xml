@@ -2,4 +2,13 @@
 <resources>
     <dimen name="pageMargin">16dp</dimen>
     <dimen name="offset">32dp</dimen>
+
+    <!-- res/values/dimens.xml (טלפונים) -->
+    <dimen name="vp_vertical_padding">16dp</dimen>
+    <dimen name="vp_horizontal_gutter">24dp</dimen>
+    <dimen name="card_h_margin">24dp</dimen>
+    <dimen name="card_v_margin">24dp</dimen>
+    <dimen name="card_min_height">280dp</dimen>
+
 </resources>
+
