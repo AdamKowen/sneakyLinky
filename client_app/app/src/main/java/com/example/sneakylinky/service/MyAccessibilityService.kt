@@ -12,15 +12,7 @@ import kotlin.math.abs
 
 class MyAccessibilityService : AccessibilityService() {
 
-    private val TAG = "AccService"
-    private val myPackage by lazy { applicationContext.packageName }
 
-    // System/launcher packages to ignore
-    private val BAD_PKGS = setOf(
-        "com.android.settings",
-        "com.google.android.apps.nexuslauncher",
-        "com.android.systemui"
-    )
 
     companion object {
         private var activityRef: WeakReference<MainActivity>? = null
@@ -35,43 +27,54 @@ class MyAccessibilityService : AccessibilityService() {
         }
     }
 
+    private val TAG = "AccService"
+    private val myPackage by lazy { applicationContext.packageName }
+    private val BAD_PKGS = setOf(
+        "com.android.settings",
+        "com.google.android.apps.nexuslauncher",
+        "com.android.systemui"
+    )
+
+    // lock state
+    private var lockUntil: Long = 0
+
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        // Ignore our own app
-        val fromPkg = event.packageName?.toString()
-        if (fromPkg == myPackage) return
-        // Ignore noisy/system packages
-        if (fromPkg in BAD_PKGS) return
+        val now = System.currentTimeMillis()
+
+        // If still locked, skip everything
+        if (now < lockUntil) {
+            return
+        }
+
+        val fromPkg = event.packageName?.toString() ?: return
+        if (fromPkg == myPackage || fromPkg in BAD_PKGS) return
 
         val relevant = event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
                 event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
         if (!relevant) return
 
         val root = event.source ?: rootInActiveWindow ?: return
-        val rootPkg = root.packageName?.toString()
-        if (rootPkg == myPackage || rootPkg in BAD_PKGS) return
+        if (root.packageName?.toString() == myPackage || root.packageName?.toString() in BAD_PKGS) return
 
-        // 1) If there is no URL anywhere in the tree, bail out early (cheap guard)
-        val treeTextQuick = collectNodeText(root)
-        val urlInTree = Regex("""https?://\S+""").find(treeTextQuick)?.value
-        if (urlInTree == null) return
+        // look for a link in this tree
+        val text = collectNodeText(root)
+        val url = Regex("""https?://\S+""").find(text)?.value ?: return
 
-        // 2) Build list of messages (generic grouping)
-        val messages: List<String> = collectMessagesGeneric(root)
+        // collect all messages
+        val messages = collectMessagesGeneric(root)
         if (messages.isEmpty()) return
 
-        // 3) Store ALL messages joined with your separator in the cache (for later selection by raw)
         val joined = messages.filter { it.isNotBlank() }.joinToString(" $$$ SEPERATOR! $$$ ")
-        LinkContextCache.lastLink = urlInTree // informational only; not used for selection anymore
-        LinkContextCache.surroundingTxt = joined
 
-        // IMPORTANT:
-        // Do NOT update the UI here, to avoid showing a wrong message.
-        // The actual selection will happen in LinkRelayActivity using the real 'raw' URL.
+        // Save to cache
+        com.example.sneakylinky.LinkContextCache.lastLink = url
+        com.example.sneakylinky.LinkContextCache.surroundingTxt = joined
+
+        // lock for ~1 second to prevent being overwritten by the browser text
+        lockUntil = now + 1000
     }
 
-    override fun onInterrupt() {
-        Log.d(TAG, "Accessibility Service Interrupted")
-    }
+    override fun onInterrupt() {}
 
     // ---------- helpers below (unchanged logic, comments in English only) ----------
 
