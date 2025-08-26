@@ -12,71 +12,79 @@ import kotlin.math.abs
 
 class MyAccessibilityService : AccessibilityService() {
 
-    // --- state ---
     private val TAG = "AccService"
     private val myPackage by lazy { applicationContext.packageName }
 
+    // System/launcher packages to ignore
+    private val BAD_PKGS = setOf(
+        "com.android.settings",
+        "com.google.android.apps.nexuslauncher",
+        "com.android.systemui"
+    )
+
     companion object {
         private var activityRef: WeakReference<MainActivity>? = null
+
         fun setActivity(activity: MainActivity) { activityRef = WeakReference(activity) }
+
+        // Allow other components (e.g., LinkRelayActivity) to push text into the UI card.
+        fun pushTextToUi(text: String) {
+            activityRef?.get()?.runOnUiThread {
+                activityRef?.get()?.updatePasteTextInAdapter(text)
+            }
+        }
     }
 
-    // --- events ---
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        // Ignore our own app events
-        if (event.packageName?.toString() == myPackage) return
+        // Ignore our own app
+        val fromPkg = event.packageName?.toString()
+        if (fromPkg == myPackage) return
+        // Ignore noisy/system packages
+        if (fromPkg in BAD_PKGS) return
 
         val relevant = event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
                 event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
         if (!relevant) return
 
         val root = event.source ?: rootInActiveWindow ?: return
-        if (root.packageName?.toString() == myPackage) return
+        val rootPkg = root.packageName?.toString()
+        if (rootPkg == myPackage || rootPkg in BAD_PKGS) return
 
-        // 1) Find a URL quickly (we only proceed if link exists)
-        val treeText = collectNodeText(root)
-        val link = Regex("""https?://\S+""").find(treeText)?.value ?: return
+        // 1) If there is no URL anywhere in the tree, bail out early (cheap guard)
+        val treeTextQuick = collectNodeText(root)
+        val urlInTree = Regex("""https?://\S+""").find(treeTextQuick)?.value
+        if (urlInTree == null) return
 
-        // 2) Build list of messages (generic across apps)
+        // 2) Build list of messages (generic grouping)
         val messages: List<String> = collectMessagesGeneric(root)
+        if (messages.isEmpty()) return
 
-        // 3) Join with $$$ and push to UI BEFORE any browser navigation
-        val joined = messages.filter { it.isNotBlank() }.joinToString(separator = " $$$ SEPERATOR! $$$ ")
-        LinkContextCache.lastLink = link
+        // 3) Store ALL messages joined with your separator in the cache (for later selection by raw)
+        val joined = messages.filter { it.isNotBlank() }.joinToString(" $$$ SEPERATOR! $$$ ")
+        LinkContextCache.lastLink = urlInTree // informational only; not used for selection anymore
         LinkContextCache.surroundingTxt = joined
-        Log.d(TAG, "Collected ${messages.size} messages. Preview: $joined")
 
-        activityRef?.get()?.let { act ->
-            act.runOnUiThread { act.updatePasteTextInAdapter(joined) }
-        }
+        // IMPORTANT:
+        // Do NOT update the UI here, to avoid showing a wrong message.
+        // The actual selection will happen in LinkRelayActivity using the real 'raw' URL.
     }
 
     override fun onInterrupt() {
         Log.d(TAG, "Accessibility Service Interrupted")
     }
 
-    // --- generic message collection ---
+    // ---------- helpers below (unchanged logic, comments in English only) ----------
 
-    /**
-     * Try to collect message bubbles as separate strings in a generic way:
-     * 1) If we can find a collection (RecyclerView/ListView/ScrollView) with children that have
-     *    CollectionItemInfo, use (rowIndex,columnIndex) as stable message grouping.
-     * 2) Fallback: group by message "item root" derived from walking up to the list container,
-     *    or by y/top bounds proximity to avoid merging the entire screen.
-     */
     private fun collectMessagesGeneric(root: AccessibilityNodeInfo): List<String> {
         val listContainer = findListContainer(root) ?: root
 
-        // First attempt: use CollectionItemInfo rows
         val itemsByRow = mutableMapOf<Int, MutableList<AccessibilityNodeInfo>>()
         gatherCollectionItems(listContainer) { node, rowIndex ->
             itemsByRow.getOrPut(rowIndex) { mutableListOf() }.add(node)
         }
 
         val messages = mutableListOf<String>()
-
         if (itemsByRow.isNotEmpty()) {
-            // Build message text from each row item
             val sortedRows = itemsByRow.keys.sorted()
             for (row in sortedRows) {
                 val rowNodes = itemsByRow[row] ?: continue
@@ -88,11 +96,9 @@ class MyAccessibilityService : AccessibilityService() {
             if (messages.isNotEmpty()) return messages
         }
 
-        // Fallback: group by "message item root" or by Y proximity bands
         val textLeaves = gatherTextLeaves(listContainer)
         if (textLeaves.isEmpty()) return emptyList()
 
-        // Group by ancestor item root when possible
         val byAncestor = linkedMapOf<AccessibilityNodeInfo, MutableList<AccessibilityNodeInfo>>()
         for (leaf in textLeaves) {
             val itemRoot = findMessageItemRoot(leaf) ?: continue
@@ -100,17 +106,15 @@ class MyAccessibilityService : AccessibilityService() {
         }
 
         if (byAncestor.isNotEmpty()) {
-            for ((itemRoot, leaves) in byAncestor) {
-                // Use the item's subtree text rather than just leaves to include labels/time etc.
+            for ((itemRoot, _) in byAncestor) {
                 val txt = normalizeMessageText(collectNodeText(itemRoot))
                 if (txt.isNotBlank()) messages.add(txt)
             }
             if (messages.isNotEmpty()) return messages
         }
 
-        // Last resort: bounds-based vertical clustering
         val density = resources.displayMetrics.density
-        val gapThresholdPx = (12 * density).toInt() // ~12dp vertical gap threshold
+        val gapThresholdPx = (12 * density).toInt()
 
         val leavesWithTop = textLeaves.mapNotNull { node ->
             val r = Rect()
@@ -123,7 +127,7 @@ class MyAccessibilityService : AccessibilityService() {
         var lastTop: Int? = null
 
         for ((node, top) in leavesWithTop) {
-            if (lastTop == null || abs(top - lastTop!!) <= gapThresholdPx) {
+            if (lastTop == null || kotlin.math.abs(top - lastTop!!) <= gapThresholdPx) {
                 current.add(node)
             } else {
                 if (current.isNotEmpty()) clusters.add(current)
@@ -134,7 +138,6 @@ class MyAccessibilityService : AccessibilityService() {
         if (current.isNotEmpty()) clusters.add(current)
 
         for (cluster in clusters) {
-            // Merge text in cluster order
             val sb = StringBuilder()
             cluster.forEach { sb.append(it.text ?: "").append(" ") }
             val txt = normalizeMessageText(sb.toString())
@@ -144,10 +147,6 @@ class MyAccessibilityService : AccessibilityService() {
         return messages
     }
 
-    // --- helpers ---
-
-    // English comments only:
-    // Collect children that report CollectionItemInfo; callback provides row index.
     private fun gatherCollectionItems(
         node: AccessibilityNodeInfo,
         onItem: (item: AccessibilityNodeInfo, rowIndex: Int) -> Unit
@@ -159,7 +158,6 @@ class MyAccessibilityService : AccessibilityService() {
             val itemInfo = cur.collectionItemInfo
             if (itemInfo != null) {
                 onItem(cur, itemInfo.rowIndex)
-                // Do not traverse deeper from an item; treat it as an atomic message container
                 continue
             }
             for (i in 0 until cur.childCount) {
@@ -168,7 +166,6 @@ class MyAccessibilityService : AccessibilityService() {
         }
     }
 
-    // Find the main scrolling container that holds messages
     private fun findListContainer(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
         if (node == null) return null
         val cls = node.className?.toString().orEmpty()
@@ -183,7 +180,6 @@ class MyAccessibilityService : AccessibilityService() {
         return null
     }
 
-    // Walk up until the message-item root (child of the list container or clickable wrapper)
     private fun findMessageItemRoot(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
         var cur = node ?: return null
         var candidate: AccessibilityNodeInfo? = cur
@@ -201,7 +197,6 @@ class MyAccessibilityService : AccessibilityService() {
         return candidate
     }
 
-    // Gather all leaf text nodes under a container
     private fun gatherTextLeaves(container: AccessibilityNodeInfo): List<AccessibilityNodeInfo> {
         val out = mutableListOf<AccessibilityNodeInfo>()
         fun dfs(n: AccessibilityNodeInfo?) {
@@ -220,7 +215,6 @@ class MyAccessibilityService : AccessibilityService() {
         return out
     }
 
-    // Collect all text within a node subtree (excluding our app & noisy classes)
     private fun collectNodeText(node: AccessibilityNodeInfo?): String {
         if (node == null) return ""
         if (node.packageName?.toString() == myPackage) return ""
@@ -236,7 +230,6 @@ class MyAccessibilityService : AccessibilityService() {
         return sb.toString()
     }
 
-    // Normalize whitespace and remove duplicate spaces
     private fun normalizeMessageText(s: String): String =
         s.replace(Regex("""\s+"""), " ").trim()
 }
