@@ -10,5 +10,13 @@
     <dimen name="card_v_margin">24dp</dimen>
     <dimen name="card_min_height">280dp</dimen>
 
+
+
+    <!-- fixed height for the big paste box -->
+    <dimen name="paste_edit_height">160dp</dimen>
+    <!-- extra clearance above the keyboard for showing the button -->
+    <dimen name="keyboard_clearance">24dp</dimen>
+
+
 </resources>
 

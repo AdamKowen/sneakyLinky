@@ -11,6 +11,7 @@
 
         <item name="materialButtonStyle">@style/SneakyButton_WhiteRounded</item>
         <item name="cardViewStyle">@style/Widget.MaterialComponents.CardView</item>
+
     </style>
 
     <style name="Theme.Sneaky.NoDisplay" parent="Theme.Material3.DayNight.NoActionBar">
@@ -19,4 +20,8 @@
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowAnimationStyle">@null</item>
     </style>
+
+
+
+
 </resources>

@@ -25,6 +25,27 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:ignore="MissingConstraints" />
+        tools:ignore="MissingConstraints"
+        app:layout_constraintBottom_toTopOf="@id/bottomTabs"/>
+
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/bottomTabs"
+        android:layout_width="0dp"
+        android:layout_height="68dp"
+        android:background="@android:color/transparent"
+        app:tabIndicatorHeight="0dp"
+        app:tabMode="fixed"
+        app:tabGravity="center"
+        app:tabRippleColor="@android:color/transparent"
+        app:tabIconTint="@color/tab_icon_tint"
+        app:tabPaddingTop="8dp"
+        app:tabPaddingBottom="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+

@@ -1,20 +1,21 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_marginStart="24dp"
-    android:layout_marginEnd="24dp"
-    android:layout_marginTop="64dp"
-    android:layout_marginBottom="64dp"
-
-    android:background="@color/backgroundPurple">
+    android:fillViewport="true"
+    android:background="@color/backgroundPurple"
+    android:clipToPadding="false"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="150dp"
+    android:paddingBottom="64dp">
 
     <LinearLayout
         android:orientation="vertical"
-        android:padding="24dp"
+        android:padding="34dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical">
+        android:layout_height="wrap_content">
 
         <ImageView
             android:id="@+id/cardImage"
@@ -24,8 +25,7 @@
             android:scaleType="centerCrop"
             app:srcCompat="@drawable/floating" />
 
-
-        <!-- 2. text box font color ( near-white) -->
+        <!-- Link input -->
         <EditText
             android:id="@+id/editTextUrl"
             android:layout_width="match_parent"
@@ -38,18 +38,20 @@
             android:backgroundTint="@android:color/white"
             android:backgroundTintMode="src_in"
             android:inputType="textUri|textNoSuggestions"
+            android:imeOptions="actionDone"
             android:ellipsize="end"
             android:scrollbars="horizontal"
             android:fadingEdgeLength="12dp" />
 
-
-        <!-- 3. check button -->
+        <!-- Keep the button visible above IME by giving bottom margin -->
         <Button
             android:id="@+id/checkButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"
-            android:text="Check" />
+            android:layout_marginBottom="16dp"
+        android:text="Check" />
+
     </LinearLayout>
-</FrameLayout>
+</androidx.core.widget.NestedScrollView>

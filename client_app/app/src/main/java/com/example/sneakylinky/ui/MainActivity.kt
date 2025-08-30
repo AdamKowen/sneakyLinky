@@ -1,11 +1,13 @@
 package com.example.sneakylinky.ui
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -42,6 +44,13 @@ class MainActivity : AppCompatActivity() {
     // Keep Retrofit service instance if needed elsewhere in the screen
     private val apiService = RetrofitClient.apiService
 
+
+    // At the top of MainActivity (inside the class)
+    private var tabsAreVisible = true
+
+
+
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         android.util.Log.d("ACT_TRACE", "Main started")
         super.onCreate(savedInstanceState)
@@ -51,14 +60,6 @@ class MainActivity : AppCompatActivity() {
         // Keep classic insets behavior (not edge-to-edge) so adjustResize works predictably
         WindowCompat.setDecorFitsSystemWindows(window, true)
 
-        val root = findViewById<View>(R.id.rootLayout)
-        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottom = maxOf(ime.bottom, sys.bottom)  // use IME bottom when keyboard is visible
-            v.setPadding(v.paddingLeft, sys.top, v.paddingRight, bottom)
-            insets  // do not consume; let children get insets if they need
-        }
 
         requestNotificationPermissionIfNeeded()
 
@@ -92,6 +93,36 @@ class MainActivity : AppCompatActivity() {
             adapter = cardAdapter
         }
 
+        val tabs = findViewById<com.google.android.material.tabs.TabLayout>(R.id.bottomTabs)
+
+        try {
+            // Preferred: use TabLayoutMediator (if available in your material version)
+            com.google.android.material.tabs.TabLayoutMediator(tabs, viewPager) { tab, position ->
+                tab.setIcon(iconFor(position))
+            }.attach()
+        } catch (e: Throwable) {
+            // Fallback to manual wiring if mediator class is missing
+            setupTabsManually(tabs, viewPager)
+        }
+
+
+        // Close keyboard as soon as user starts swiping between cards
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageScrollStateChanged(state: Int) {
+                // When user starts dragging, hide IME to avoid "squeezed" look
+                if (state == ViewPager2.SCROLL_STATE_DRAGGING) {
+                    hideKeyboardAndClearFocus()
+                }
+            }
+        })
+
+        installImeAwareTabsHider(tabs)
+
+
+
+
+
+
         // Card carousel behavior/transform
         viewPager.offscreenPageLimit = 3
         val pageMargin = resources.getDimensionPixelOffset(R.dimen.pageMargin)
@@ -123,13 +154,28 @@ class MainActivity : AppCompatActivity() {
         window.decorView.systemUiVisibility = 0 // disable fullscreen flags if any
 
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.viewPager)) { v, insets ->
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, ime.bottom) // add bottom space when keyboard shows
-            insets
-        }
 
     }
+
+    // Small pop animation on selection
+    private fun animateTab(tab: com.google.android.material.tabs.TabLayout.Tab?, selected: Boolean) {
+        val view = tab?.customView ?: tab?.view   // prefer customView if exists
+        val up = -4 * resources.displayMetrics.density // -4dp
+        val scale = if (selected) 1.15f else 1f
+        val transY = if (selected) up else 0f
+
+        view?.animate()
+            ?.scaleX(scale)
+            ?.scaleY(scale)
+            ?.translationY(transY)
+            ?.setDuration(150)
+            ?.start()
+    }
+
+
+
+
+
 
     override fun onResume() {
         super.onResume()
@@ -188,4 +234,128 @@ class MainActivity : AppCompatActivity() {
     fun updatePasteTextInAdapter(text: String) {
         cardAdapter?.updatePasteText(text)
     }
+
+
+    // Hide IME and clear focus (comments in English only)
+    private fun hideKeyboardAndClearFocus() {
+        val view = currentFocus ?: window.decorView.rootView
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
+        view.clearFocus()
+    }
+
+
+
+    private fun iconFor(position: Int): Int {
+        return when (position) {
+            0 -> R.drawable.link
+            1 -> R.drawable.message
+            2 -> R.drawable.browser
+            else -> R.drawable.recent
+        }
+    }
+
+
+    // Manual wiring when TabLayoutMediator is not available
+    private fun setupTabsManually(
+        tabs: com.google.android.material.tabs.TabLayout,
+        viewPager: androidx.viewpager2.widget.ViewPager2
+    ) {
+        // Create tabs with icons
+        repeat(4) { idx ->
+            val tab = tabs.newTab().setIcon(iconFor(idx))
+            tabs.addTab(tab, idx == 0)
+        }
+
+        // Sync: tab -> pager
+        tabs.addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab) {
+                tab.view.isSelected = true
+                viewPager.currentItem = tab.position
+            }
+            override fun onTabUnselected(tab: com.google.android.material.tabs.TabLayout.Tab) {
+                tab.view.isSelected = false
+            }
+            override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab) {}
+        })
+
+        // Sync: pager -> tab
+        viewPager.registerOnPageChangeCallback(object : androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                if (position in 0 until tabs.tabCount) {
+                    val tab = tabs.getTabAt(position)
+                    if (tab != null && !tab.isSelected) {
+                        tabs.selectTab(tab)
+                    }
+                }
+            }
+        })
+
+    }
+
+    // Call this from onCreate() AFTER you get 'tabs'
+    private fun installImeAwareTabsHider(tabs: com.google.android.material.tabs.TabLayout) {
+        val rootDecor = window.decorView // decorView reliably receives IME insets
+
+        // 1) Listen to window insets and toggle tabs
+        ViewCompat.setOnApplyWindowInsetsListener(rootDecor) { _, insets ->
+            val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            setTabsVisible(!imeVisible, tabs)
+            insets // don't consume
+        }
+
+        // 2) Initialize state once (covers the case when IME is already showing)
+        tabs.post {
+            val current = ViewCompat.getRootWindowInsets(tabs)
+            val imeVisibleNow = current?.isVisible(WindowInsetsCompat.Type.ime()) == true
+            setTabsVisible(!imeVisibleNow, tabs)
+        }
+
+        // 3) Ensure an initial pass of insets happens
+        ViewCompat.requestApplyInsets(rootDecor)
+    }
+
+
+
+    // Smoothly toggle tabs visibility
+    private fun setTabsVisible(visible: Boolean, tabs: com.google.android.material.tabs.TabLayout) {
+        if (visible == tabsAreVisible) return
+        tabsAreVisible = visible
+
+        // If height is 0 (not laid out yet), just flip visibility without animation
+        if (tabs.height == 0) {
+            tabs.visibility = if (visible) View.VISIBLE else View.GONE
+            return
+        }
+
+        if (visible) {
+            tabs.apply {
+                if (visibility != View.VISIBLE) visibility = View.VISIBLE
+                alpha = 0f
+                translationY = height.toFloat()
+                animate().alpha(1f).translationY(0f).setDuration(140L).start()
+            }
+        } else {
+            tabs.animate()
+                .alpha(0f)
+                .translationY(tabs.height.toFloat())
+                .setDuration(120L)
+                .withEndAction {
+                    tabs.visibility = View.GONE
+                    tabs.alpha = 1f
+                    tabs.translationY = 0f
+                }
+                .start()
+        }
+    }
+
+
+
+
+
+
 }
+
+
+
+

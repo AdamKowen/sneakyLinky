@@ -24,7 +24,6 @@
         <activity
             android:name=".ui.LinkRelayActivity"
             android:exported="true"
-            android:windowSoftInputMode="stateHidden|adjustResize"
             android:theme="@style/Theme.Sneaky.NoDisplay"
             android:launchMode="singleTask"
             android:noHistory="true">
@@ -43,7 +42,8 @@
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.SneakyLinky"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize|stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

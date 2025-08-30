@@ -1,5 +1,6 @@
 package com.example.sneakylinky.ui
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -87,6 +88,7 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
 
 
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is Card1ViewHolder -> {
@@ -117,6 +119,42 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
                 }
 
 
+                holder.editText.apply {
+                    setHorizontallyScrolling(true)
+                    isHorizontalScrollBarEnabled = true
+                    imeOptions = EditorInfo.IME_ACTION_DONE
+
+                    // Prevent ViewPager2 from stealing horizontal drags while editing
+                    setOnTouchListener { v, _ ->
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                        false
+                    }
+
+                    // Lift the whole card (field + button) above IME when focused
+                    setOnFocusChangeListener { _, hasFocus ->
+                        if (hasFocus) holder.itemView.post {
+                            holder.itemView.requestRectangleOnScreen(
+                                android.graphics.Rect(0, 0, holder.itemView.width, holder.itemView.height),
+                                true
+                            )
+                        }
+                    }
+                }
+
+                holder.checkButton.setOnClickListener {
+                    val raw = holder.editText.text.toString()
+                    onCheckUrl(raw)
+                    // Ensure the button area is visible if IME stays open
+                    holder.itemView.post {
+                        holder.itemView.requestRectangleOnScreen(
+                            android.graphics.Rect(0, 0, holder.itemView.width, holder.itemView.height),
+                            true
+                        )
+                    }
+                }
+
+
+
 
             }
             is PasteViewHolder -> {
@@ -134,6 +172,42 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
                     val txt = holder.edit.text.toString()
                     // delegate the entered text to the analysis function
                     onAnalyzeText(txt)
+                }
+
+
+
+                holder.edit.apply {
+                    // Make the edit box scroll vertically inside (no card growth)
+                    movementMethod = android.text.method.ScrollingMovementMethod.getInstance()
+                    isVerticalScrollBarEnabled = true
+
+                    // Prevent ViewPager2 from intercepting scroll gestures
+                    setOnTouchListener { v, _ ->
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                        false
+                    }
+
+                    // Lift the whole item above IME when focused (not just the cursor line)
+                    setOnFocusChangeListener { _, hasFocus ->
+                        if (hasFocus) holder.itemView.post {
+                            holder.itemView.requestRectangleOnScreen(
+                                android.graphics.Rect(0, 0, holder.itemView.width, holder.itemView.height),
+                                true
+                            )
+                        }
+                    }
+                }
+
+                holder.btn.setOnClickListener {
+                    val txt = holder.edit.text.toString()
+                    onAnalyzeText(txt)
+                    // Also ensure button is visible above IME right after click/focus changes
+                    holder.itemView.post {
+                        holder.itemView.requestRectangleOnScreen(
+                            android.graphics.Rect(0, 0, holder.itemView.width, holder.itemView.height),
+                            true
+                        )
+                    }
                 }
             }
             is Card2ViewHolder -> {

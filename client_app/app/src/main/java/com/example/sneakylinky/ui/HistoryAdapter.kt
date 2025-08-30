@@ -13,10 +13,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.sneakylinky.R
 import com.example.sneakylinky.SneakyLinkyApp
 import com.example.sneakylinky.service.report.HistoryStore
-import com.example.sneakylinky.service.report.LinkReport
 import com.example.sneakylinky.service.report.ReportDispatcher
 import com.example.sneakylinky.service.report.UserVerdict
-import com.example.sneakylinky.service.report.Verdict
 import kotlinx.coroutines.launch
 
 class HistoryAdapter(private val items: List<String>) :

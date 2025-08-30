@@ -93,7 +93,7 @@ class MyAccessibilityService : AccessibilityService() {
                 val rowNodes = itemsByRow[row] ?: continue
                 val sb = StringBuilder()
                 rowNodes.forEach { n -> sb.append(collectNodeText(n)).append(" ") }
-                val txt = normalizeMessageText(sb.toString())
+                val txt = removeRepeatedSubstring(normalizeMessageText(sb.toString()))
                 if (txt.isNotBlank()) messages.add(txt)
             }
             if (messages.isNotEmpty()) return messages
@@ -110,7 +110,8 @@ class MyAccessibilityService : AccessibilityService() {
 
         if (byAncestor.isNotEmpty()) {
             for ((itemRoot, _) in byAncestor) {
-                val txt = normalizeMessageText(collectNodeText(itemRoot))
+
+                val txt = removeRepeatedSubstring(normalizeMessageText(collectNodeText(itemRoot)))
                 if (txt.isNotBlank()) messages.add(txt)
             }
             if (messages.isNotEmpty()) return messages
@@ -143,7 +144,7 @@ class MyAccessibilityService : AccessibilityService() {
         for (cluster in clusters) {
             val sb = StringBuilder()
             cluster.forEach { sb.append(it.text ?: "").append(" ") }
-            val txt = normalizeMessageText(sb.toString())
+            val txt = removeRepeatedSubstring(normalizeMessageText(sb.toString()))
             if (txt.isNotBlank()) messages.add(txt)
         }
 
@@ -235,4 +236,21 @@ class MyAccessibilityService : AccessibilityService() {
 
     private fun normalizeMessageText(s: String): String =
         s.replace(Regex("""\s+"""), " ").trim()
+
+
+    private fun removeRepeatedSubstring(msg: String): String {
+        // Try to split on " said " or "You said"
+        val regex = Regex("""\b(?:You said|said)\b""", RegexOption.IGNORE_CASE)
+        val match = regex.find(msg)
+        if (match != null) {
+            val before = msg.substring(0, match.range.first).trim()
+            val after = msg.substring(match.range.last + 1).trim()
+            // If "after" contains "before", drop it
+            if (after.contains(before)) return before
+        }
+        return msg
+    }
+
+
+
 }
