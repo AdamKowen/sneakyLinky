@@ -9,7 +9,7 @@
     android:paddingStart="24dp"
     android:paddingEnd="24dp"
     android:paddingTop="150dp"
-    android:paddingBottom="64dp">
+    android:paddingBottom="20dp">
 
     <LinearLayout
         android:orientation="vertical"

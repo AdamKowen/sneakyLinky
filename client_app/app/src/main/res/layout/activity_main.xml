@@ -32,15 +32,15 @@
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/bottomTabs"
         android:layout_width="0dp"
-        android:layout_height="68dp"
+        android:layout_height="80dp"
         android:background="@android:color/transparent"
         app:tabIndicatorHeight="0dp"
         app:tabMode="fixed"
         app:tabGravity="center"
         app:tabRippleColor="@android:color/transparent"
         app:tabIconTint="@color/tab_icon_tint"
-        app:tabPaddingTop="8dp"
-        app:tabPaddingBottom="8dp"
+        app:tabPaddingTop="0dp"
+        app:tabPaddingBottom="20dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />

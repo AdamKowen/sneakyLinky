@@ -1,5 +1,6 @@
 package com.example.sneakylinky.ui
 
+import EdgeAwareCenterSnapHelper
 import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
@@ -211,29 +212,45 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
                 }
             }
             is Card2ViewHolder -> {
-                val context = holder.itemView.context
-                val browsers = getInstalledBrowsers(context)
-                val savedPkg = getSelectedBrowser(context)
+                // --- setup ---
+                val ctx = holder.itemView.context
+                val rv = holder.recyclerBrowser
+                val browsers = getInstalledBrowsers(ctx)
+                val savedPkg = getSelectedBrowser(ctx)
 
-                // Layout Manager in vertical layout
-                holder.recyclerBrowser.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-
-                // Snap for the selected item
-                val snapHelper = PagerSnapHelper()
-                snapHelper.attachToRecyclerView(holder.recyclerBrowser)
-
-                val adapter = BrowserCarouselAdapter(browsers, context) { browser ->
-                    val pkgName = browser.activityInfo.packageName
-                    saveSelectedBrowser(context, pkgName)
-                    Toast.makeText(context, "Selected Browser: ${browser.loadLabel(context.packageManager)}", Toast.LENGTH_SHORT).show()
+                // LayoutManager (vertical list)
+                if (rv.layoutManager == null) {
+                    rv.layoutManager = LinearLayoutManager(ctx, LinearLayoutManager.VERTICAL, false)
                 }
 
-                holder.recyclerBrowser.adapter = adapter
+                // Snap: center items, but clamp first to TOP and last to BOTTOM (edge-aware)
+                if (rv.onFlingListener == null) {
+                    EdgeAwareCenterSnapHelper().attachToRecyclerView(rv)
+                }
 
-                // scrollinhg to the saved/default browser
+                // RecyclerView tuning
+                rv.setHasFixedSize(true)
+                rv.overScrollMode = View.OVER_SCROLL_NEVER
+                rv.clipToPadding = false // no top/bottom padding; snap helper clamps edges
+
+                // Adapter
+                val adapter = BrowserCarouselAdapter(browsers, ctx) { browser ->
+                    val pkgName = browser.activityInfo.packageName
+                    saveSelectedBrowser(ctx, pkgName)
+                    Toast.makeText(ctx, "Selected Browser: ${browser.loadLabel(ctx.packageManager)}", Toast.LENGTH_SHORT).show()
+
+                    // Optional: gently bring the picked item into place
+                    rv.post {
+                        val pos = browsers.indexOfFirst { it.activityInfo.packageName == pkgName }
+                        if (pos >= 0) rv.smoothScrollToPosition(pos)
+                    }
+                }
+                rv.adapter = adapter
+
+                // Scroll to saved/default after layout pass so snap can position correctly
                 val indexToScroll = browsers.indexOfFirst { it.activityInfo.packageName == savedPkg }
                 if (indexToScroll >= 0) {
-                    holder.recyclerBrowser.scrollToPosition(indexToScroll)
+                    rv.post { rv.scrollToPosition(indexToScroll) }
                 }
             }
 

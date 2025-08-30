@@ -18,5 +18,7 @@
     <dimen name="keyboard_clearance">24dp</dimen>
 
 
+    <dimen name="browser_card_height">200dp</dimen>
+
 </resources>
 

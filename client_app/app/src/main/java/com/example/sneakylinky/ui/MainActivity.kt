@@ -96,9 +96,23 @@ class MainActivity : AppCompatActivity() {
         val tabs = findViewById<com.google.android.material.tabs.TabLayout>(R.id.bottomTabs)
 
         try {
-            // Preferred: use TabLayoutMediator (if available in your material version)
             com.google.android.material.tabs.TabLayoutMediator(tabs, viewPager) { tab, position ->
-                tab.setIcon(iconFor(position))
+                val v = layoutInflater.inflate(R.layout.tab_icon, tabs, false)
+                val iv = v.findViewById<ImageView>(R.id.tabIcon)
+                iv.setImageResource(iconFor(position))
+
+                iv.imageTintList = ContextCompat.getColorStateList(this, R.color.tab_icon_tint)
+
+
+                // if you ever override size from code:
+                val lp = iv.layoutParams
+                lp.width  = (28 * resources.displayMetrics.density).toInt()
+                lp.height = (28 * resources.displayMetrics.density).toInt()
+                iv.layoutParams = lp
+                iv.requestLayout()
+
+
+                tab.customView = v
             }.attach()
         } catch (e: Throwable) {
             // Fallback to manual wiring if mediator class is missing
@@ -318,36 +332,42 @@ class MainActivity : AppCompatActivity() {
 
 
     // Smoothly toggle tabs visibility
+    // Show with a short animation; hide instantly when IME appears.
     private fun setTabsVisible(visible: Boolean, tabs: com.google.android.material.tabs.TabLayout) {
         if (visible == tabsAreVisible) return
         tabsAreVisible = visible
 
-        // If height is 0 (not laid out yet), just flip visibility without animation
-        if (tabs.height == 0) {
-            tabs.visibility = if (visible) View.VISIBLE else View.GONE
+        // cancel any running animations to avoid "stutter"
+        tabs.animate().cancel()
+
+        if (!visible) {
+            // IME is visible -> hide immediately (no animation)
+            // (instant hide prevents the keyboard from overlapping mid-animation)
+            tabs.visibility = View.GONE
+            tabs.alpha = 1f
+            tabs.translationY = 0f
             return
         }
 
-        if (visible) {
-            tabs.apply {
-                if (visibility != View.VISIBLE) visibility = View.VISIBLE
-                alpha = 0f
-                translationY = height.toFloat()
-                animate().alpha(1f).translationY(0f).setDuration(140L).start()
-            }
-        } else {
-            tabs.animate()
-                .alpha(0f)
-                .translationY(tabs.height.toFloat())
-                .setDuration(120L)
-                .withEndAction {
-                    tabs.visibility = View.GONE
-                    tabs.alpha = 1f
-                    tabs.translationY = 0f
-                }
+        // Becoming visible -> animate in (nice but not blocking IME)
+        if (tabs.height == 0 || !tabs.isLaidOut) {
+            // If not laid out yet, just show without animation
+            tabs.visibility = View.VISIBLE
+            return
+        }
+
+        tabs.apply {
+            if (visibility != View.VISIBLE) visibility = View.VISIBLE
+            alpha = 0f
+            translationY = height.toFloat()
+            animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(140L)
                 .start()
         }
     }
+
 
 
 

@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ImageView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tabIcon"
-    android:layout_width="28dp"
-    android:layout_height="28dp"
-    android:layout_gravity="center"
-    android:padding="2dp"
-    android:adjustViewBounds="true"
-    android:scaleType="centerInside"
+    android:layout_width="7dp"
+    android:layout_height="7dp"
+    android:padding="0dp"
+    android:scaleType="fitCenter"
+    android:adjustViewBounds="false"
     android:src="@drawable/floating" />
