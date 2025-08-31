@@ -1,0 +1,79 @@
+.toast-area {
+  position: fixed;
+  top: 1rem;
+  right: -1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 9999;
+}
+
+/* בסיס של טוסט */
+.toast {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  min-width: 200px;
+  max-width: 400px;
+  animation: fadeSlideIn 0.3s ease;
+}
+
+/* צבעים לפי סוג */
+.toast-info {
+  background-color: #2196f3;
+}
+
+.toast-success {
+  background-color: #4caf50;
+}
+
+.toast-warn {
+  background-color: #ff9800;
+}
+
+.toast-error {
+  background-color: #f44336;
+}
+
+/* אנימציות */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeSlideOut {
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.toast-fade-out {
+  animation: fadeSlideOut 0.3s ease forwards;
+}
+
+
+/* 📱 MOBILE */
+@media (max-width: 768px) {
+  .toast-area {
+    top: 0.5rem;
+    right: 0.5rem;
+    left: 0.5rem;
+  }
+  
+  .toast {
+    min-width: auto;
+    max-width: none;
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+}

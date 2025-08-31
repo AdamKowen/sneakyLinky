@@ -1,5 +1,37 @@
+# ----------------- dependencies & tests -----------------
 node_modules
-npm-debug.log
+coverage/
+tests/
+*.test.js
+docs/
+examples/
+
+# ----------------- logs -----------------
+npm-debug.log*
+*.log
+*.out
+
+# ----------------- local secrets -----------------
 .env
-.git
-README.md
+.npmrc
+.env.*
+
+# ----------------- IDE artefacts -----------------
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ----------------- git -----------------
+.git/
+.gitignore
+
+# ----------------- build artefacts -----------------
+dist/
+build/
+
+
+load_domains.js
+by.js

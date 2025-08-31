@@ -1,0 +1,171 @@
+.dashboard-grid {
+  display:grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap:18px;
+}
+.card {
+  background:#fff; border-radius:16px; padding:18px;
+  box-shadow:0 12px 28px rgba(0,0,0,.06);
+  grid-column: span 6; /* שתי עמודות ברוחב בינוני */
+}
+.card-span { grid-column: span 12; } /* הטבלה בכל הרוחב */
+.card-title { margin:0 0 6px 0; font-size:18px; font-weight:800; }
+.card-sub { margin:0 0 12px 0; color:#6b7280; font-size:14px; }
+
+.inline { display:flex; gap:10px; align-items: center; margin-bottom: 12px; }
+.inline label { 
+  min-width: 80px; 
+  font-weight: 600; 
+  color: #374151; 
+  font-size: 14px;
+}
+.input {
+  flex:1; padding:10px 12px; border:2px solid #e5e7eb; border-radius:12px; outline:none;
+}
+.input:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.15); }
+
+.btn {
+  padding:10px 14px; border:0; border-radius:12px;
+  background:#6366f1; color:#fff; font-weight:700; cursor:pointer;
+}
+.btn:hover { filter:brightness(.95); }
+
+.table { border:1px solid #eee; border-radius:12px; overflow:hidden; }
+.thead, .trow { display:grid; grid-template-columns: 1fr 120px 160px; }
+.thead { background:#f8f8fd; font-weight:700; padding:10px 12px; }
+.trow { padding:10px 12px; border-top:1px solid #f0f0f5; }
+.result {
+  background:#f8f8fd; border:1px solid #eee; border-radius:12px; padding:12px; margin:0;
+}
+
+/* Stats card styling */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stat-number.suspicious-stat {
+  color: #f44336;
+}
+
+.stat-number.safe-stat {
+  color: #4caf50;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #4e5563;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.last-updated {
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Domain stats specific tweaks */
+.domain-stats-card .stats-grid {
+  align-items: stretch;
+}
+.domain-stats-card .stat-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 72px;
+}
+.domain-stats-card .stat-number {
+  font-variant-numeric: tabular-nums; /* fixed-width digits */
+  letter-spacing: .5px;
+  display: block;
+}
+.domain-stats-card .stat-label {
+  margin-top: 2px;
+  color: #374151; /* darker gray */
+}
+/* Force total (first) number to dark color */
+.domain-stats-card .stat-item:first-child .stat-number {
+  color: #111827; /* dark text */
+}
+
+/* 📱 MOBILE & TABLET RESPONSIVE */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    gap: 12px;
+  }
+  
+  .card, .card-span {
+    grid-column: span 12; /* כל הכרטיסים ברוחב מלא */
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .card-title {
+    font-size: 16px;
+  }
+  
+  .card-sub {
+    font-size: 13px;
+  }
+  
+  .inline {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .inline label {
+    min-width: auto;
+    font-size: 14px;
+    text-align: left;
+  }
+  
+  .btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    min-height: 48px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr; /* סטטיסטיקות בעמודה */
+    gap: 12px;
+  }
+  
+  .stat-item {
+    padding: 16px;
+  }
+  
+  .stat-number {
+    font-size: 20px;
+  }
+}
+
+/* 📱 רק מסכים קטנים */
+@media (max-width: 480px) {
+  .card-title {
+    font-size: 14px;
+  }
+  
+  .btn {
+    font-size: 14px;
+    padding: 12px;
+  }
+}

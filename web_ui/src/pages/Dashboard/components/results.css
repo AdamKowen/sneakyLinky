@@ -1,0 +1,256 @@
+/* Results table styling */
+.table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.results-table th,
+.results-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.results-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.results-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.results-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Column-specific styling */
+.domain-name {
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  color: #2196f3;
+}
+
+.suspicious {
+  font-weight: 500;
+}
+
+.suspicious-yes {
+  color: #f44336;
+}
+
+.suspicious-no {
+  color: #4caf50;
+}
+
+.access-count {
+  text-align: center;
+  font-weight: 500;
+}
+
+.timestamp {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Actions column */
+.actions {
+  text-align: center;
+  width: 120px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+}
+
+.toggle-btn.btn-suspicious {
+  background: rgba(255, 152, 0, 0.1);
+  color: #ff9800;
+}
+
+.toggle-btn.btn-suspicious:hover {
+  background: rgba(255, 152, 0, 0.2);
+}
+
+.toggle-btn.btn-safe {
+  background: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}
+
+.toggle-btn.btn-safe:hover {
+  background: rgba(76, 175, 80, 0.2);
+}
+
+.delete-btn {
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+}
+
+.delete-btn:hover {
+  background: rgba(244, 67, 54, 0.2);
+}
+
+/* Responsive table - מכסה גם טאבלטים ו-iPad */
+@media (max-width: 1024px) {
+  .table-container {
+    overflow: visible;
+  }
+  
+  .results-table,
+  .results-table thead,
+  .results-table tbody,
+  .results-table th,
+  .results-table td,
+  .results-table tr {
+    display: block;
+  }
+  
+  /* הסתרת הכותרות */
+  .results-table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  /* כל שורה הופכת לכרטיס */
+  .results-table tbody tr {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 12px; /* רווח קטן יותר */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative; /* עבור מיקום הכפתורים */
+  }
+  
+  .results-table tbody tr:hover {
+    background: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* כל תא הופך לשורה עם label */
+  .results-table td {
+    border: none;
+    border-bottom: none; /* הסרת הקו המפריד */
+    position: relative;
+    padding: 4px 0; /* רווח קטן יותר */
+    padding-left: 100px; /* מקום ל-label */
+    padding-right: 80px; /* מקום לכפתורים */
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .results-table td:last-child {
+    border-bottom: none;
+  }
+  
+  /* מיקום הכפתורים בצד ימין של הכרטיס */
+  .results-table td:last-child {
+    position: absolute;
+    top: 8px; /* צמוד יותר לחלק העליון */
+    right: 8px; /* צמוד יותר לצד ימין */
+    padding: 0;
+    border: none;
+    background: none;
+  }
+  
+  /* Labels לכל תא */
+  .results-table td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: 8px; /* צמוד לשמאל */
+    width: 85px; /* רוחב קטן יותר */
+    padding-right: 5px;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #666;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* התאמות לתוכן */
+  .domain-name {
+    font-size: 0.9rem;
+    word-break: break-all;
+  }
+  
+  /* כפתורי פעולה - קבועים בצד ימין */
+  .action-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  
+  /* הסתרת עמודות תאריכים במובייל */
+  .results-table tbody tr td:nth-child(3),
+  .results-table tbody tr td:nth-child(4),
+  .results-table tbody tr td:nth-child(5) {
+    display: none !important;
+  }
+}
+
+/* 📱 אלטרנטיבה - טבלה קומפקטית */
+@media (max-width: 480px) {
+  .results-table td {
+    padding-left: 9px; /* התאמה לרוחב הקטן יותר */
+    font-size: 0.85rem;
+  }
+  
+  .results-table td:before {
+    width: 80px; /* התאמה לרוחב הקטן יותר */
+    font-size: 0.75rem;
+    left: 4px; /* צמוד יותר */
+  }
+  
+  .results-table td:last-child {
+    top: 4px;
+    right: 4px;
+  }
+}
