@@ -264,7 +264,8 @@ class MainActivity : AppCompatActivity() {
         return when (position) {
             0 -> R.drawable.link
             1 -> R.drawable.message
-            2 -> R.drawable.browser
+            2 -> R.drawable.comb_arrow
+            3 -> R.drawable.browser
             else -> R.drawable.recent
         }
     }
