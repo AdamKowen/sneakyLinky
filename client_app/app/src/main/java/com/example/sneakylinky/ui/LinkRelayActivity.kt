@@ -14,6 +14,9 @@ class LinkRelayActivity : AppCompatActivity() {
     private val SEP = " $$$ SEPERATOR! $$$ "
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        overridePendingTransition(0, 0)
+
         super.onCreate(savedInstanceState)
 
         val raw = intent?.dataString ?: run {
@@ -39,6 +42,8 @@ class LinkRelayActivity : AppCompatActivity() {
             )
             finishAndRemoveTask()
         }
+
+        overridePendingTransition(0, 0) // ensure no exit animation
     }
 
     // ---------------- helpers (English comments only) ----------------
