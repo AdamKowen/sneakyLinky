@@ -21,7 +21,7 @@ import com.example.sneakylinky.R
 import com.example.sneakylinky.service.LinkFlow
 import com.example.sneakylinky.service.MyAccessibilityService
 import com.example.sneakylinky.service.RetrofitClient
-import com.example.sneakylinky.service.aianalysis.UrlAnalyzer
+import com.example.sneakylinky.service.serveranalysis.UrlAnalyzer
 import com.example.sneakylinky.service.urlanalyzer.populateTestData
 import com.example.sneakylinky.util.UiNotices
 import com.example.sneakylinky.util.getInstalledBrowsers

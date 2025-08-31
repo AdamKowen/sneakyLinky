@@ -2,7 +2,7 @@ package com.example.sneakylinky.service
 
 import android.content.Context
 import com.example.sneakylinky.SneakyLinkyApp
-import com.example.sneakylinky.service.aianalysis.UrlAnalyzer
+import com.example.sneakylinky.service.serveranalysis.UrlAnalyzer
 import com.example.sneakylinky.service.urlanalyzer.CanonicalParseResult
 import com.example.sneakylinky.service.urlanalyzer.canonicalize
 import com.example.sneakylinky.service.urlanalyzer.isLocalSafe
