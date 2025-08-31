@@ -7,18 +7,45 @@
     android:layout_height="match_parent"
     android:background="@color/backgroundPurple"
     tools:context=".ui.MainActivity">
-<!--    <include-->
-<!--        android:id="@+id/linkCard"-->
-<!--        layout="@layout/link_check_card"-->
-<!--        app:layout_constraintTop_toTopOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"/>-->
+
+
+
     <androidx.viewpager2.widget.ViewPager2
+
+
         android:id="@+id/viewPager"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingTop="32dp"
-        android:paddingBottom="32dp"
-        />
+        android:paddingTop="@dimen/vp_vertical_padding"
+        android:paddingBottom="@dimen/vp_vertical_padding"
+        android:paddingStart="@dimen/vp_horizontal_gutter"
+        android:paddingEnd="@dimen/vp_horizontal_gutter"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="MissingConstraints"
+        app:layout_constraintBottom_toTopOf="@id/bottomTabs"/>
+
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/bottomTabs"
+        android:layout_width="0dp"
+        android:layout_height="80dp"
+        android:background="@android:color/transparent"
+        app:tabIndicatorHeight="0dp"
+        app:tabMode="fixed"
+        app:tabGravity="center"
+        app:tabRippleColor="@android:color/transparent"
+        app:tabIconTint="@color/tab_icon_tint"
+        app:tabPaddingTop="0dp"
+        app:tabPaddingBottom="20dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
+

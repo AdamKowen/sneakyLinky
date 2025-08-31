@@ -13,9 +13,9 @@
 
     <LinearLayout
         android:orientation="vertical"
-        android:padding="34dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:padding="34dp">
 
         <ImageView
             android:id="@+id/cardImage"
@@ -23,35 +23,40 @@
             android:layout_height="wrap_content"
             android:adjustViewBounds="true"
             android:scaleType="centerCrop"
-            app:srcCompat="@drawable/floating" />
+            app:srcCompat="@drawable/massage" />
 
-        <!-- Link input -->
+        <!-- fixed-height multiline input with internal scroll -->
         <EditText
-            android:id="@+id/editTextUrl"
+            android:id="@+id/longTextInput"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:hint="Enter Link Here"
-            android:singleLine="true"
-            android:textColorHint="@color/near_white"
-            android:textColor="@android:color/white"
-            android:backgroundTint="@android:color/white"
-            android:backgroundTintMode="src_in"
-            android:inputType="textUri|textNoSuggestions"
-            android:imeOptions="actionDone"
-            android:ellipsize="end"
-            android:scrollbars="horizontal"
-            android:fadingEdgeLength="12dp" />
+            android:layout_height="160dp"
+        android:layout_marginTop="8dp"
+        android:hint="@string/paste_text_here"
+        android:gravity="top|start"
+        android:inputType="textMultiLine|textNoSuggestions"
+        android:imeOptions="flagNoExtractUi|actionDone"
+        android:padding="12dp"
+        android:textColor="@android:color/white"
+        android:textColorHint="@color/near_white"
+        android:background="@drawable/bg_light_purple"
+        android:overScrollMode="ifContentScrolls"
+        android:scrollbars="vertical"
+        android:focusable="true"
+        android:focusableInTouchMode="true" />
 
-        <!-- Keep the button visible above IME by giving bottom margin -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/white" />
+
         <Button
-            android:id="@+id/checkButton"
+            android:id="@+id/analyzeButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp"
-        android:text="Check" />
+        android:text="@string/submit_for_analysis" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

@@ -1,113 +1,67 @@
 package com.example.sneakylinky.ui
 
-import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.example.sneakylinky.SneakyLinkyApp
-import com.example.sneakylinky.service.LinkChecker
-import com.example.sneakylinky.service.serveranalysis.UrlAnalyzer
-import com.example.sneakylinky.service.urlanalyzer.CanonicalParseResult
-import com.example.sneakylinky.service.urlanalyzer.canonicalize
-import com.example.sneakylinky.service.urlanalyzer.isLocalSafe
-import com.example.sneakylinky.util.launchInSelectedBrowser
-import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.lifecycleScope
+import com.example.sneakylinky.service.LinkFlow
+import com.example.sneakylinky.service.MyAccessibilityService
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import android.Manifest
-import android.content.pm.PackageManager
-import android.widget.Toast
-import androidx.core.content.ContextCompat
-
 
 class LinkRelayActivity : AppCompatActivity() {
 
-
+    private val TAG = "LinkRelay"
+    private val SEP = " $$$ SEPERATOR! $$$ "
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // no setContentView → activity remains invisible
-        val raw = intent?.dataString ?: run { finish(); return }
-
-        /* ---------- blocking but fast (≤ ~50 ms) ---------- */
-        val finalUrl = runBlocking {
-            withContext(Dispatchers.IO) {
-                when (val res = LinkChecker.resolveUrl(raw)) {
-                    is LinkChecker.UrlResolutionResult.Success -> res.finalUrl
-                    else -> raw                      // keep original if resolve failed
-                }
-            }
+        val raw = intent?.dataString ?: run {
+            Log.d(TAG, "No dataString in intent; finishing.")
+            finish(); return
         }
+        Log.d(TAG, "raw='$raw'")
 
-        /* canonicalize */
-        val canon = when (val r = finalUrl.canonicalize()) {
-            is CanonicalParseResult.Success -> r.canonUrl
-            else -> { showWarning(finalUrl, "Internal error: could not verify link safely"); finish(); return }
-        }
+        // Get whatever the service cached (joined messages string).
+        val joined = com.example.sneakylinky.LinkContextCache.surroundingTxt
+        val selectedMsg = joined?.let { pickMessageFromJoined(it, raw) }
 
-        /* local DB / static check */
-        val isSafe = runBlocking {
-            withContext(Dispatchers.IO) { canon.isLocalSafe() }
-        }
+        Log.d(TAG, "joinedNull=${joined == null} selectedLen=${selectedMsg?.length}")
 
-        if (isSafe) {
-            launchInSelectedBrowser(this, finalUrl)                // open browser
-            SneakyLinkyApp.appScope.launch { remoteScanAsync(finalUrl) } // AI scan (bg)
-        } else {
-            showWarning(finalUrl, "Link found to be suspicious. Proceed with caution.")
-        }
+        // Push the selected message to the UI card (if available)
+        selectedMsg?.let { MyAccessibilityService.pushTextToUi(it) }
 
-        MainActivity.lastOpenedLink = finalUrl                     // remember for UI
-        finishAndRemoveTask()                                      // vanish
-    }
-
-
-
-    private suspend fun remoteScanAsync(url: String) {
-        runCatching { UrlAnalyzer.analyze(url) }
-            .onSuccess { ai ->
-                if (ai.phishingScore >= 0.5f) {
-                    withContext(Dispatchers.Main) {      // run on UI thread
-                        safeShowToast("Potential risk detected. Stay alert!⚠\uFE0F ")
-                    }
-                }
-                else
-                {
-                    withContext(Dispatchers.Main) {
-                        showHeadsUp("Sneaky Approves ✅")
-                    }
-                }
-            }
-    }
-
-
-
-    private fun showWarning(url: String, msg: String) {
-        // remember last link for MainActivity
-        MainActivity.lastOpenedLink = url
-        val i = Intent(this, LinkWarningActivity::class.java).apply {
-            putExtra("url", url)
-            putExtra("warningText", msg)
-        }
-        startActivity(i)
-    }
-
-
-    /* heads-up via Toast – safe even if Activity already finished */
-    private fun showHeadsUp(msg: String) =
-        android.widget.Toast.makeText(applicationContext, msg, android.widget.Toast.LENGTH_LONG).show()
-
-
-    private fun safeShowToast(msg: String) {
-        val hasPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        } else true
-
-        if (hasPermission) {
-            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        lifecycleScope.launch {
+            LinkFlow.runLinkFlow(
+                context = this@LinkRelayActivity,
+                raw = raw,
+                contextText = selectedMsg // pass only the single matched message
+            )
+            finishAndRemoveTask()
         }
     }
 
+    // ---------------- helpers (English comments only) ----------------
 
+    private fun pickMessageFromJoined(joined: String, raw: String): String? {
+        // Normalize inputs
+        fun stripTrail(s: String) = s.trim().trimEnd('.', ',', ';', ':', ')', ']', '}', '…', '！', '、')
+        fun norm(s: String) = s.replace(Regex("""\s+"""), " ").trim()
+
+        val needle = stripTrail(norm(raw))
+        val noScheme = needle.replace(Regex("""^https?://"""), "")
+        val domain = noScheme.substringBefore('/').lowercase()
+
+        val parts = joined.split(SEP).map { it.trim() }.filter { it.isNotEmpty() }
+
+        // 1) exact match (full URL)
+        parts.firstOrNull { norm(it).contains(needle) }?.let { return it }
+        // 2) no-scheme match
+        parts.firstOrNull { norm(it).contains(noScheme) }?.let { return it }
+        // 3) domain-only (last resort)
+        if (domain.isNotBlank()) {
+            parts.firstOrNull { norm(it).lowercase().contains(domain) }?.let { return it }
+        }
+        return null
+    }
 }

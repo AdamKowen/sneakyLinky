@@ -1,9 +1,12 @@
 package com.example.sneakylinky.ui
 
+import EdgeAwareCenterSnapHelper
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -15,7 +18,7 @@ import com.example.sneakylinky.R
 import com.example.sneakylinky.util.*
 
 //  constructor accept a callback function for URL checking
-class CardAdapter(private val context: Context, private val onCheckUrl: (String) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class CardAdapter(private val context: Context, private val onCheckUrl: (String) -> Unit, private val onAnalyzeText: (String) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
 
 
@@ -31,17 +34,22 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
     private var pendingUrlForCard1: String? = null
 
 
+    // Paste
+    private var pendingTextForCardPaste: String? = null
+
     companion object {
         private const val TYPE_CARD_1 = 0
-        private const val TYPE_CARD_2 = 1
-        private const val TYPE_CARD_3 = 2
+        private const val TYPE_CARD_PASTE = 1
+        private const val TYPE_CARD_2 = 2
+        private const val TYPE_CARD_3 = 3
     }
 
-    override fun getItemCount(): Int = 3
+    override fun getItemCount(): Int = 4
 
     override fun getItemViewType(position: Int): Int = when (position) {
         0 -> TYPE_CARD_1
-        1 -> TYPE_CARD_2
+        1 -> TYPE_CARD_PASTE
+        2 -> TYPE_CARD_2
         else -> TYPE_CARD_3
     }
 
@@ -56,6 +64,10 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
                 // Store the reference to the EditText when the ViewHolder for the first card is created
                 holder
             }
+            TYPE_CARD_PASTE -> {
+                val v = inflater.inflate(R.layout.check_text_card, parent, false)
+                PasteViewHolder(v)
+            }
             TYPE_CARD_2 -> {
                 val view = inflater.inflate(R.layout.browser_pick_card, parent, false)
                 Card2ViewHolder(view)
@@ -68,10 +80,16 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
     }
 
 
+    class PasteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val edit: EditText = itemView.findViewById(R.id.longTextInput)
+        val btn : Button   = itemView.findViewById(R.id.analyzeButton)
+    }
 
 
 
 
+
+    @SuppressLint("ClickableViewAccessibility")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is Card1ViewHolder -> {
@@ -90,32 +108,149 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
                     onCheckUrl(raw)          // delegate to activity – no coroutines here
                 }
 
-
-            }
-            is Card2ViewHolder -> {
-                val context = holder.itemView.context
-                val browsers = getInstalledBrowsers(context)
-                val savedPkg = getSelectedBrowser(context)
-
-                // Layout Manager in vertical layout
-                holder.recyclerBrowser.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-
-                // Snap for the selected item
-                val snapHelper = PagerSnapHelper()
-                snapHelper.attachToRecyclerView(holder.recyclerBrowser)
-
-                val adapter = BrowserCarouselAdapter(browsers, context) { browser ->
-                    val pkgName = browser.activityInfo.packageName
-                    saveSelectedBrowser(context, pkgName)
-                    Toast.makeText(context, "Selected Browser: ${browser.loadLabel(context.packageManager)}", Toast.LENGTH_SHORT).show()
+                // in Card1ViewHolder binding (comments in English only)
+                holder.editText.apply {
+                    setHorizontallyScrolling(true)
+                    isHorizontalScrollBarEnabled = true
+                    // Optional: auto-scroll to end when focused
+                    setOnFocusChangeListener { _, hasFocus ->
+                        if (hasFocus) setSelection(text?.length ?: 0)
+                    }
+                    imeOptions = EditorInfo.IME_ACTION_DONE
                 }
 
-                holder.recyclerBrowser.adapter = adapter
 
-                // scrollinhg to the saved/default browser
+                holder.editText.apply {
+                    setHorizontallyScrolling(true)
+                    isHorizontalScrollBarEnabled = true
+                    imeOptions = EditorInfo.IME_ACTION_DONE
+
+                    // Prevent ViewPager2 from stealing horizontal drags while editing
+                    setOnTouchListener { v, _ ->
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                        false
+                    }
+
+                    // Lift the whole card (field + button) above IME when focused
+                    setOnFocusChangeListener { _, hasFocus ->
+                        if (hasFocus) holder.itemView.post {
+                            holder.itemView.requestRectangleOnScreen(
+                                android.graphics.Rect(0, 0, holder.itemView.width, holder.itemView.height),
+                                true
+                            )
+                        }
+                    }
+                }
+
+                holder.checkButton.setOnClickListener {
+                    val raw = holder.editText.text.toString()
+                    onCheckUrl(raw)
+                    // Ensure the button area is visible if IME stays open
+                    holder.itemView.post {
+                        holder.itemView.requestRectangleOnScreen(
+                            android.graphics.Rect(0, 0, holder.itemView.width, holder.itemView.height),
+                            true
+                        )
+                    }
+                }
+
+
+
+
+            }
+            is PasteViewHolder -> {
+                pendingTextForCardPaste?.let { txt ->
+                    holder.edit.setText(txt)
+                    pendingTextForCardPaste = null
+                }
+
+                // English hint for the empty EditText
+                holder.edit.hint = "Enter text here"
+                // English label for the analyze button
+                holder.btn.text = "Analyze"
+
+                holder.btn.setOnClickListener {
+                    val txt = holder.edit.text.toString()
+                    // delegate the entered text to the analysis function
+                    onAnalyzeText(txt)
+                }
+
+
+
+                holder.edit.apply {
+                    // Make the edit box scroll vertically inside (no card growth)
+                    movementMethod = android.text.method.ScrollingMovementMethod.getInstance()
+                    isVerticalScrollBarEnabled = true
+
+                    // Prevent ViewPager2 from intercepting scroll gestures
+                    setOnTouchListener { v, _ ->
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                        false
+                    }
+
+                    // Lift the whole item above IME when focused (not just the cursor line)
+                    setOnFocusChangeListener { _, hasFocus ->
+                        if (hasFocus) holder.itemView.post {
+                            holder.itemView.requestRectangleOnScreen(
+                                android.graphics.Rect(0, 0, holder.itemView.width, holder.itemView.height),
+                                true
+                            )
+                        }
+                    }
+                }
+
+                holder.btn.setOnClickListener {
+                    val txt = holder.edit.text.toString()
+                    onAnalyzeText(txt)
+                    // Also ensure button is visible above IME right after click/focus changes
+                    holder.itemView.post {
+                        holder.itemView.requestRectangleOnScreen(
+                            android.graphics.Rect(0, 0, holder.itemView.width, holder.itemView.height),
+                            true
+                        )
+                    }
+                }
+            }
+            is Card2ViewHolder -> {
+                // --- setup ---
+                val ctx = holder.itemView.context
+                val rv = holder.recyclerBrowser
+                val browsers = getInstalledBrowsers(ctx)
+                val savedPkg = getSelectedBrowser(ctx)
+
+                // LayoutManager (vertical list)
+                if (rv.layoutManager == null) {
+                    rv.layoutManager = LinearLayoutManager(ctx, LinearLayoutManager.VERTICAL, false)
+                }
+
+                // Snap: center items, but clamp first to TOP and last to BOTTOM (edge-aware)
+                if (rv.onFlingListener == null) {
+                    EdgeAwareCenterSnapHelper().attachToRecyclerView(rv)
+                }
+
+                // RecyclerView tuning
+                rv.setHasFixedSize(true)
+                rv.overScrollMode = View.OVER_SCROLL_NEVER
+                rv.clipToPadding = false // no top/bottom padding; snap helper clamps edges
+
+                // Adapter
+                val adapter = BrowserCarouselAdapter(browsers, ctx) { browser ->
+                    val pkgName = browser.activityInfo.packageName
+                    saveSelectedBrowser(ctx, pkgName)
+                    Toast.makeText(ctx, "Selected Browser: ${browser.loadLabel(ctx.packageManager)}", Toast.LENGTH_SHORT).show()
+
+                    // Optional: gently bring the picked item into place
+                    rv.post {
+                        val pos = browsers.indexOfFirst { it.activityInfo.packageName == pkgName }
+                        if (pos >= 0) rv.smoothScrollToPosition(pos)
+                    }
+                }
+                rv.adapter = adapter
+
+                // Scroll to saved/default after layout pass so snap can position correctly
                 val indexToScroll = browsers.indexOfFirst { it.activityInfo.packageName == savedPkg }
                 if (indexToScroll >= 0) {
-                    holder.recyclerBrowser.scrollToPosition(indexToScroll)
+                    rv.post { rv.scrollToPosition(indexToScroll) }
                 }
             }
 
@@ -156,7 +291,7 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
 
         // 3) Refresh card #1 to update EditText, and card #3 to update history list
         notifyItemChanged(0)
-        notifyItemChanged(2)
+        notifyItemChanged(3)
     }
 
     /**
@@ -186,6 +321,11 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
             .apply()
     }
 
+    fun updatePasteText(text: String) {
+        pendingTextForCardPaste = text
+        // force rebind of card #1=TYPE_CARD_PASTE (index=1)
+        notifyItemChanged(1)
+    }
 
     // 1. Creating an inner adapter for ViewPager2 to show browser names
     // 2. Scroll to the saved/default index without animation
@@ -194,3 +334,6 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
         val textView: TextView = itemView.findViewById(R.id.browserNameText)
     }
 }
+
+
+

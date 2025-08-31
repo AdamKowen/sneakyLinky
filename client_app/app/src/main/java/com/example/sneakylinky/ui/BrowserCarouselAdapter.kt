@@ -30,6 +30,8 @@ class BrowserCarouselAdapter(
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_browser_card, parent, false)
         return VH(view)
+
+
     }
 
     override fun getItemCount() = browsers.size
