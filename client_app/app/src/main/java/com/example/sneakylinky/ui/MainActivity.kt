@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -14,6 +15,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
@@ -54,12 +56,19 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         android.util.Log.d("ACT_TRACE", "Main started")
         super.onCreate(savedInstanceState)
+
+        // This is the key line to handle edge-to-edge display
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
 
 
-        // Keep classic insets behavior (not edge-to-edge) so adjustResize works predictably
-        WindowCompat.setDecorFitsSystemWindows(window, true)
+        // Apply insets to your real content root (the root layout inside activity_main)
+        val contentRoot = findViewById<ViewGroup>(android.R.id.content)
+        contentRoot.applyInsetsToFirstChild()
 
+        // Make sure scrolling content can scroll above IME
+        // (if you have RecyclerViews / ViewPager2, this helps)
+        contentRoot.clipToPadding = false
 
         requestNotificationPermissionIfNeeded()
 
@@ -370,9 +379,59 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    /**
+     * Apply padding for system bars top/bottom and switch bottom to IME when keyboard is visible.
+     * Works with edge-to-edge (decorFitsSystemWindows=false).
+     */
+    fun View.applySystemBarsAndImePadding() {
+        // Animate with IME for smooth transition
+        val cb = object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+            private var startBottom = 0
+            override fun onPrepare(animation: WindowInsetsAnimationCompat) {
+                startBottom = paddingBottom
+            }
+            override fun onProgress(
+                insets: WindowInsetsCompat,
+                runningAnimations: MutableList<WindowInsetsAnimationCompat>
+            ): WindowInsetsCompat {
+                val ime = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+                setPadding(paddingLeft, paddingTop, paddingRight, maxOf(sys, ime))
+                return insets
+            }
+        }
+        ViewCompat.setWindowInsetsAnimationCallback(this, cb)
 
+        // Initial + non-animated changes
+        ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            v.setPadding(sys.left, sys.top, sys.right, maxOf(sys.bottom, ime.bottom))
+            WindowInsetsCompat.CONSUMED
+        }
 
+        // Ensure the first pass happens
+        requestApplyInsetsWhenAttached()
+    }
 
+    /** Convenience for view hierarchies where the root child is the content container. */
+    fun ViewGroup.applyInsetsToFirstChild() {
+        (getChildAt(0) ?: this).applySystemBarsAndImePadding()
+    }
+
+    private fun View.requestApplyInsetsWhenAttached() {
+        if (isAttachedToWindow) {
+            requestApplyInsets()
+        } else {
+            addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    v.removeOnAttachStateChangeListener(this)
+                    v.requestApplyInsets()
+                }
+                override fun onViewDetachedFromWindow(v: View) {}
+            })
+        }
+    }
 
 
 }
