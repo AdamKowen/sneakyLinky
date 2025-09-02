@@ -7,8 +7,8 @@ export async function getDomainsLimit(params) {
     n = parseInt(params, 10);
   } else if (params && typeof params === 'object') {
     n = parseInt(params.limit ?? params.n ?? params.count, 10);
-    sortBy = params.sortBy ?? params.orderBy ?? 'createdAt';           // מיפוי orderBy -> sortBy
-    dir = String(params.dir ?? params.order ?? 'ASC').toUpperCase();    // מיפוי order -> dir
+    sortBy = params.sortBy ?? params.orderBy ?? 'createdAt';           
+    dir = String(params.dir ?? params.order ?? 'ASC').toUpperCase();    
   } else {
     throw new Error('Invalid params to getDomainsLimit');
   }
@@ -21,8 +21,7 @@ export async function getDomainsLimit(params) {
 
   const url = `/domain/limit/${n}${qs.toString() ? `?${qs.toString()}` : ''}`;
 
-  // אם ה-api שלך הוא axios עם baseURL שכבר כולל /v1 – תשאיר בלי /v1 פה.
-  // אם לא – תוסיף /v1 בתחילת ה־url.
+
   const { data } = await api.get(url);
   return data;
 }

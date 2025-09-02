@@ -5,8 +5,8 @@ import { getDomainsLimit } from "../../../services/domain";
 export default function DomainLimitCard({ onResult }) {
   const [n, setN] = useState("");
   const [loading, setLoading] = useState(false);
-  const [orderBy, setOrderBy] = useState("createdAt"); // עמודה למיון - ברירת מחדל
-  const [order, setOrder] = useState("asc"); // כיוון המיון
+  const [orderBy, setOrderBy] = useState("createdAt"); 
+  const [order, setOrder] = useState("asc"); 
   const { error: toastError, success } = useToast();
 
   const onChange = (e) => {
@@ -26,7 +26,6 @@ export default function DomainLimitCard({ onResult }) {
 
     setLoading(true);
     try {
-      // הוספת פרמטרים נוספים לקריאה
       const params = {
         limit: parseInt(n),
         orderBy: orderBy,
@@ -55,7 +54,7 @@ export default function DomainLimitCard({ onResult }) {
       <h2 className="card-title">Limit with Filters</h2>
       <p className="card-sub">GET /v1/domain/limit/:n with order options</p>
       
-      {/* מספר התוצאות */}
+    
       <div className="inline">
         <label>Limit:</label>
         <input
@@ -76,7 +75,7 @@ export default function DomainLimitCard({ onResult }) {
         </button>
       </div>
 
-      {/* אפשרויות מיון - אחת לצד השנייה */}
+    
       <div className="inline">
         <label>Order by:</label>
         <select 

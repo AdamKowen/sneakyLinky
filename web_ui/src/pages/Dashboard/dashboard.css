@@ -6,9 +6,9 @@
 .card {
   background:#fff; border-radius:16px; padding:18px;
   box-shadow:0 12px 28px rgba(0,0,0,.06);
-  grid-column: span 6; /* שתי עמודות ברוחב בינוני */
+  grid-column: span 6;
 }
-.card-span { grid-column: span 12; } /* הטבלה בכל הרוחב */
+.card-span { grid-column: span 12; }
 .card-title { margin:0 0 6px 0; font-size:18px; font-weight:800; }
 .card-sub { margin:0 0 12px 0; color:#6b7280; font-size:14px; }
 
@@ -38,7 +38,6 @@
   background:#f8f8fd; border:1px solid #eee; border-radius:12px; padding:12px; margin:0;
 }
 
-/* Stats card styling */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -81,7 +80,6 @@
   margin-top: 8px;
 }
 
-/* Domain stats specific tweaks */
 .domain-stats-card .stats-grid {
   align-items: stretch;
 }
@@ -92,27 +90,25 @@
   min-height: 72px;
 }
 .domain-stats-card .stat-number {
-  font-variant-numeric: tabular-nums; /* fixed-width digits */
+  font-variant-numeric: tabular-nums;
   letter-spacing: .5px;
   display: block;
 }
 .domain-stats-card .stat-label {
   margin-top: 2px;
-  color: #374151; /* darker gray */
+  color: #374151;
 }
-/* Force total (first) number to dark color */
 .domain-stats-card .stat-item:first-child .stat-number {
-  color: #111827; /* dark text */
+  color: #111827;
 }
 
-/* 📱 MOBILE & TABLET RESPONSIVE */
 @media (max-width: 1024px) {
   .dashboard-grid {
     gap: 12px;
   }
   
   .card, .card-span {
-    grid-column: span 12; /* כל הכרטיסים ברוחב מלא */
+    grid-column: span 12;
     padding: 16px;
     border-radius: 12px;
   }
@@ -145,7 +141,7 @@
   }
   
   .stats-grid {
-    grid-template-columns: 1fr; /* סטטיסטיקות בעמודה */
+    grid-template-columns: 1fr;
     gap: 12px;
   }
   
@@ -158,7 +154,6 @@
   }
 }
 
-/* 📱 רק מסכים קטנים */
 @media (max-width: 480px) {
   .card-title {
     font-size: 14px;

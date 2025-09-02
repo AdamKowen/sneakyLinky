@@ -87,8 +87,35 @@ async function deleteByUUIDsService(uuids) {
 
 // 5. Create or increment report
 async function createOrIncrementReportService(input) {
-  validateReportInput(input);
-  return repo.createOrIncrementReport(input);
+  try {
+    validateReportInput(input);
+    return await repo.createOrIncrementReport(input);
+  } catch (err) {
+    // Handle Sequelize validation errors
+    if (err.name === 'SequelizeValidationError') {
+      const validationErrors = err.errors.map(e => ({
+        field: e.path,
+        message: e.message,
+        value: e.value
+      }));
+      const e = new Error('Validation failed');
+      e.statusCode = 400;
+      e.publicMessage = 'Validation failed';
+      e.details = validationErrors;
+      throw e;
+    }
+    
+    // Handle Sequelize unique constraint errors
+    if (err.name === 'SequelizeUniqueConstraintError') {
+      const e = new Error('Report already exists');
+      e.statusCode = 409;
+      e.publicMessage = 'Report already exists with these parameters';
+      throw e;
+    }
+    
+    // Re-throw other errors (including our custom validation errors)
+    throw err;
+  }
 }
 
 // 6. Update adminDecision
