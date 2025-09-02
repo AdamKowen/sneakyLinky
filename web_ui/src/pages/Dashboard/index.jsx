@@ -14,11 +14,10 @@ export default function DashboardPage() {
   const bumpStats = () => setStatsRefreshKey(k => k + 1);
 
   const [result, setResult] = useState(null);
-  const [lastQuery, setLastQuery] = useState(null); // שמירת השאילתה האחרונה
+  const [lastQuery, setLastQuery] = useState(null);
 
   const handleResult = (newResult) => {
     setResult(newResult);
-    // שמירת פרטי השאילתה האחרונה לריענון
     if (newResult.type === 'domains' && newResult.title.includes('Limit:')) {
       const limitMatch = newResult.title.match(/Limit: (\d+)/);
       if (limitMatch) {
@@ -39,27 +38,20 @@ export default function DashboardPage() {
   };
 
   const handleRefresh = async (updatedResult = null) => {
-    // אם קיבלנו תוצאה מעודכנת (מעדכון מקומי), השתמש בה
     if (updatedResult) {
       setResult(updatedResult);
       return;
     }
-
-    // אחרת, בצע קריאה מחדש לשרת
     if (!lastQuery) return;
-
     try {
       let data;
       let title;
-
       if (lastQuery.type === 'limit') {
         data = await getDomainsLimit(lastQuery.value);
         title = `Domains (Limit: ${lastQuery.value})`;
       } else if (lastQuery.type === 'first') {
-        // אם תוסיף getFirstDomain - השתמש בו כאן
         return;
       }
-
       if (data) {
         setResult({
           title,

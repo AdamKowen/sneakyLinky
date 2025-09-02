@@ -14,7 +14,6 @@ export default function AppRouter() {
           <Route path="/userreports" element={<ProtectedRoute><UserReports /></ProtectedRoute>} />
         </Route>
         <Route path="/login" element={<LoginPage />} />
-        {/* דף הבית מפנה ללוגין בשלב זה */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

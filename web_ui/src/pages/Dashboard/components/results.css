@@ -125,7 +125,7 @@
   background: rgba(244, 67, 54, 0.2);
 }
 
-/* Responsive table - מכסה גם טאבלטים ו-iPad */
+
 @media (max-width: 1024px) {
   .table-container {
     overflow: visible;
@@ -140,22 +140,22 @@
     display: block;
   }
   
-  /* הסתרת הכותרות */
+  
   .results-table thead tr {
     position: absolute;
     top: -9999px;
     left: -9999px;
   }
   
-  /* כל שורה הופכת לכרטיס */
+  
   .results-table tbody tr {
     background: white;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     margin-bottom: 12px;
-    padding: 12px; /* רווח קטן יותר */
+    padding: 12px; 
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    position: relative; /* עבור מיקום הכפתורים */
+    position: relative; 
   }
   
   .results-table tbody tr:hover {
@@ -163,14 +163,14 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
   
-  /* כל תא הופך לשורה עם label */
+ 
   .results-table td {
     border: none;
-    border-bottom: none; /* הסרת הקו המפריד */
+    border-bottom: none; 
     position: relative;
-    padding: 4px 0; /* רווח קטן יותר */
-    padding-left: 100px; /* מקום ל-label */
-    padding-right: 80px; /* מקום לכפתורים */
+    padding: 4px 0; 
+    padding-left: 100px; 
+    padding-right: 80px; 
     min-height: 28px;
     display: flex;
     align-items: center;
@@ -180,22 +180,22 @@
     border-bottom: none;
   }
   
-  /* מיקום הכפתורים בצד ימין של הכרטיס */
+  /* Action buttons positioned on the right side of the card */
   .results-table td:last-child {
     position: absolute;
-    top: 8px; /* צמוד יותר לחלק העליון */
-    right: 8px; /* צמוד יותר לצד ימין */
+    top: 8px;
+    right: 8px;
     padding: 0;
     border: none;
     background: none;
   }
   
-  /* Labels לכל תא */
+  /* Labels for each cell */
   .results-table td:before {
     content: attr(data-label);
     position: absolute;
-    left: 8px; /* צמוד לשמאל */
-    width: 85px; /* רוחב קטן יותר */
+    left: 8px;
+    width: 85px;
     padding-right: 5px;
     white-space: nowrap;
     font-weight: 600;
@@ -207,13 +207,13 @@
     align-items: center;
   }
   
-  /* התאמות לתוכן */
+  /* Content adjustments */
   .domain-name {
     font-size: 0.9rem;
     word-break: break-all;
   }
   
-  /* כפתורי פעולה - קבועים בצד ימין */
+  /* Action buttons - always on the right */
   .action-buttons {
     display: flex;
     flex-direction: row;
@@ -228,7 +228,7 @@
     font-size: 14px;
   }
   
-  /* הסתרת עמודות תאריכים במובייל */
+  /* Hide date columns on mobile */
   .results-table tbody tr td:nth-child(3),
   .results-table tbody tr td:nth-child(4),
   .results-table tbody tr td:nth-child(5) {
@@ -236,17 +236,17 @@
   }
 }
 
-/* 📱 אלטרנטיבה - טבלה קומפקטית */
+/* Compact table for mobile */
 @media (max-width: 480px) {
   .results-table td {
-    padding-left: 9px; /* התאמה לרוחב הקטן יותר */
+    padding-left: 9px;
     font-size: 0.85rem;
   }
   
   .results-table td:before {
-    width: 80px; /* התאמה לרוחב הקטן יותר */
+    width: 80px;
     font-size: 0.75rem;
-    left: 4px; /* צמוד יותר */
+    left: 4px;
   }
   
   .results-table td:last-child {

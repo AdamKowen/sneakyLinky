@@ -11,6 +11,7 @@ const logger = require('./utils/logger');
 const { sequelize } = require('./config/db');
 
 const cors = require('cors');
+const { startWeeklyHotsetScheduler } = require('./HotsetScheduler');
 
 
 const corsOptions = {
@@ -22,7 +23,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+let hotsetScheduler;
 
+ hotsetScheduler = startWeeklyHotsetScheduler();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Middleware
@@ -111,6 +114,12 @@ const loginRoutes = require('./routes/v1/auth/loginRoutes');
  */
 const userReportsRoutes = require('./routes/v1/userReports/userReportsRoutes');
 
+/**
+ * @module routes/v1/DomainHotset/DomainHotsetRoutes
+ * @description API routes for domain hotset management
+ */
+const domainHotsetRoutes = require('./routes/v1/DomainHotset/DomainHotsetRoutes');
+
 app.use('/v1', domainRoutes);
 logger.debug('Loaded /v1/domain routes');
 
@@ -126,6 +135,9 @@ logger.debug('Loaded /v1/auth/register and /v1/auth/login routes');
 
 app.use('/v1/userReports', userReportsRoutes);
 logger.debug('Loaded /v1/userReports routes');
+
+app.use('/v1/DomainHotset', domainHotsetRoutes);
+logger.debug('Loaded /v1/DomainHotset routes');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Global error handler

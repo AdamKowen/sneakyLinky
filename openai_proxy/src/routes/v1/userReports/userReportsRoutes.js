@@ -15,7 +15,14 @@ router.post('/', async (req, res) => {
     res.status(201).json(report);
   } catch (err) {
     logger.error(`[userReports] POST / error: ${err.message}`);
-    res.status(err.statusCode || 500).json({ error: err.publicMessage || 'internal error' });
+    
+    // If the service provides details (for validation errors), include them
+    const response = { error: err.publicMessage || 'internal error' };
+    if (err.details) {
+      response.details = err.details;
+    }
+    
+    res.status(err.statusCode || 500).json(response);
   }
 });
 

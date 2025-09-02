@@ -12,7 +12,6 @@ export default function Sidebar() {
       <nav className="nav">
         <NavLink to="/dashboard" className="nav-item">Domains</NavLink>
         <NavLink to="/UserReports" className="nav-item">User Reports</NavLink>
-        {/* הוסף קישורים בהמשך */}
       </nav>
 
       <div className="sidebar-footer">▮▮▮</div>
