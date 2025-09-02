@@ -161,5 +161,7 @@ interface LinkHistoryDao {
         ackMsg: String?,
         now: Long
     )
+
+
 }
 

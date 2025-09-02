@@ -280,11 +280,15 @@
             android:src="@drawable/shield"
             app:tint="@android:color/white" />
 
-        <TextView
-            android:layout_width="91dp"
-            android:layout_height="68dp"
-            android:text="Instant on-device URL analysis"
-            android:textColor="@android:color/white" />
+
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnUpdateDbNow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Update local database now" />
+
     </LinearLayout>
 
     <!-- Curved branch arrows (kept; positioned neatly between columns) -->

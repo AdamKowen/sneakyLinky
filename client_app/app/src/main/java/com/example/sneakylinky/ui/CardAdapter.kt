@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.sneakylinky.R
+import com.example.sneakylinky.service.hotsetdatabase.HotsetSyncScheduler
 import com.example.sneakylinky.util.*
 
 //  constructor accept a callback function for URL checking
@@ -289,6 +290,16 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
     }
 
     class FlowCardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        init {
+            itemView.findViewById<View?>(R.id.btnUpdateDbNow)?.setOnClickListener {
+                HotsetSyncScheduler.runNow(itemView.context)
+                android.widget.Toast.makeText(
+                    itemView.context,
+                    "Updating local database…",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
 

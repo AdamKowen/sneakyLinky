@@ -23,6 +23,7 @@ import com.example.sneakylinky.R
 import com.example.sneakylinky.service.LinkFlow
 import com.example.sneakylinky.service.MyAccessibilityService
 import com.example.sneakylinky.service.RetrofitClient
+import com.example.sneakylinky.service.hotsetdatabase.HotsetSyncScheduler
 import com.example.sneakylinky.service.serveranalysis.UrlAnalyzer
 import com.example.sneakylinky.service.urlanalyzer.populateTestData
 import com.example.sneakylinky.util.UiNotices
@@ -56,6 +57,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         android.util.Log.d("ACT_TRACE", "Main started")
         super.onCreate(savedInstanceState)
+
+        HotsetSyncScheduler.scheduleWeekly(this)
 
         // This is the key line to handle edge-to-edge display
         WindowCompat.setDecorFitsSystemWindows(window, false)
