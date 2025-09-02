@@ -33,7 +33,7 @@ enum class DecisionSource { PARSE_ERROR, WHITELIST, BLACKLIST, HEURISTICS }
 data class UrlEvaluation(
     val verdict: Verdict,
     val source: DecisionSource,
-    val reasons: List<Reason> = emptyList(),
+    val reasonDetails: List<ReasonDetail> = emptyList(), // ← NEW
     val score: Double = 0.0,
     val canon: CanonUrl? = null
 )
@@ -97,16 +97,16 @@ suspend fun evaluateUrl(raw: String): UrlEvaluation {
         }
     }
 
-    val h = analyzeAndDecide(canon)
+    val h = runLocalHeuristicsAndDecide(canon)
     if (h.blocked) {
-        Log.d(tag, "heur: block soft=${"%.2f".format(h.totalScore)} reasons=${h.reasons}")
+        Log.d(tag, "heur: block soft=${"%.2f".format(h.totalScore)} reasons=${h.reasonDetails}")
     } else {
         Log.d(tag, "heur: safe soft=${"%.2f".format(h.totalScore)}")
     }
     return UrlEvaluation(
         verdict = if (h.blocked) Verdict.BLOCK else Verdict.SAFE,
         source = DecisionSource.HEURISTICS,
-        reasons = if (h.blocked) h.reasons else emptyList(),
+        reasonDetails = if (h.blocked) h.reasonDetails else emptyList(), // ← pass messages
         score = h.totalScore,
         canon = canon
     )
