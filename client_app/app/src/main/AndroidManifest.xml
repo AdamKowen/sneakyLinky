@@ -26,6 +26,8 @@
             android:exported="true"
             android:theme="@style/Theme.Sneaky.NoDisplay"
             android:launchMode="singleTask"
+            android:taskAffinity="com.example.sneakylinky.relay"
+            android:excludeFromRecents="true"
             android:noHistory="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -36,6 +38,7 @@
             </intent-filter>
         </activity>
 
+
         <!-- MainActivity: only opened from launcher -->
         <activity
             android:name=".ui.MainActivity"
@@ -43,7 +46,7 @@
             android:label="@string/app_name"
             android:theme="@style/Theme.SneakyLinky"
             android:launchMode="singleTask"
-            android:windowSoftInputMode="adjustResize|stateHidden">
+            android:windowSoftInputMode="stateUnchanged|adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

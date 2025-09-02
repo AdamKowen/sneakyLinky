@@ -38,19 +38,21 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
     private var pendingTextForCardPaste: String? = null
 
     companion object {
-        private const val TYPE_CARD_1 = 0
-        private const val TYPE_CARD_PASTE = 1
-        private const val TYPE_CARD_2 = 2
-        private const val TYPE_CARD_3 = 3
+        private const val LINK_CHECK_CARD = 0
+        private const val CHECK_TEXT_CARD = 1
+        private const val LINK_FLOW_CARD = 2
+        private const val BROWSER_PICK_CARD = 3
+        private const val HISTORY_CARD = 4
     }
 
-    override fun getItemCount(): Int = 4
+    override fun getItemCount(): Int = 5
 
     override fun getItemViewType(position: Int): Int = when (position) {
-        0 -> TYPE_CARD_1
-        1 -> TYPE_CARD_PASTE
-        2 -> TYPE_CARD_2
-        else -> TYPE_CARD_3
+        0 -> LINK_CHECK_CARD
+        1 -> CHECK_TEXT_CARD
+        2 -> LINK_FLOW_CARD
+        3 -> BROWSER_PICK_CARD
+        else -> HISTORY_CARD
     }
 
 
@@ -58,17 +60,21 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            TYPE_CARD_1 -> {
+            LINK_CHECK_CARD -> {
                 val view = inflater.inflate(R.layout.link_check_card, parent, false)
                 val holder = Card1ViewHolder(view)
                 // Store the reference to the EditText when the ViewHolder for the first card is created
                 holder
             }
-            TYPE_CARD_PASTE -> {
+            CHECK_TEXT_CARD -> {
                 val v = inflater.inflate(R.layout.check_text_card, parent, false)
                 PasteViewHolder(v)
             }
-            TYPE_CARD_2 -> {
+            LINK_FLOW_CARD -> {
+                val view = inflater.inflate(R.layout.link_flow_card, parent, false)
+                FlowCardViewHolder(view)
+            }
+            BROWSER_PICK_CARD -> {
                 val view = inflater.inflate(R.layout.browser_pick_card, parent, false)
                 Card2ViewHolder(view)
             }
@@ -258,6 +264,12 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
                 holder.recyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
                 holder.recyclerView.adapter = HistoryAdapter(historyList)
             }
+
+
+            is FlowCardViewHolder -> {
+            }
+
+
         }
     }
 
@@ -274,6 +286,9 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
 
     class Card3ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val recyclerView: RecyclerView = itemView.findViewById(R.id.historyRecycler)
+    }
+
+    class FlowCardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     }
 
 
