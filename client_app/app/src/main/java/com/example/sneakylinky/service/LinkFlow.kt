@@ -47,7 +47,9 @@ object LinkFlow {
         if (urlEvaluation.verdict == Verdict.BLOCK){
             Log.d(TAG, "BLOCK → markLocal(SUSPICIOUS) + toast")
             HistoryStore.markLocal(context, runId, LocalCheck.SUSPICIOUS, null, null)
-            UiNotices.showWarning(context, finalUrl, urlEvaluation.reasonDetails[0].message) // todo: go over all reasons
+            val text = packReasons(urlEvaluation.reasonDetails.map { it.message })
+            UiNotices.showWarning(context, finalUrl, text)
+//            UiNotices.showWarning(context, finalUrl, urlEvaluation.reasonDetails[0].message) // todo: go over all reasons
             return
         } else {
             Log.d(TAG, "SAFE → markLocal(SAFE)")
@@ -67,6 +69,37 @@ object LinkFlow {
     }
 
     // --- Step 1: Resolve ---
+    fun packReasons(
+        messages: List<String>,
+        maxCols: Int = 15,
+        maxRows: Int = 17
+    ): String {
+        val lines = mutableListOf<String>()
+
+        for (msg in messages) {
+            var i = 0
+            while (i < msg.length) {
+                // Candidate end of line
+                val end = (i + maxCols).coerceAtMost(msg.length)
+
+                // Try to break at the last space before `end`
+                val cut = msg.lastIndexOf(' ', end - 1, ignoreCase = false)
+                    .takeIf { it >= i }  // valid break point in this segment
+                    ?: end                // else hard cut
+
+                lines.add(msg.substring(i, cut).trimEnd())
+                i = if (cut == end) end else cut + 1
+            }
+
+            // Blank line after each message
+            lines.add("")
+            if (lines.size >= maxRows) break
+        }
+
+        val limited = lines.take(maxRows)
+        return limited.dropLastWhile { it.isBlank() }.joinToString("\n")
+    }
+
 
     private suspend fun resolveFinalOrWarn(context: Context, runId: Long, raw: String):
             String? = withContext(Dispatchers.IO) {
@@ -85,7 +118,13 @@ object LinkFlow {
                         "7 - 56789ABCDEFGHIJKLMN\n" +
                         "8 - 56789ABCDEFGHIJKLMN\n" +
                         "9 - 56789ABCDEFGHIJKLMN\n" +
-                        "10 - 56789ABCDEFGHIJKLM\n" )
+                        "10 - 6789ABCDEFGHIJKLMN\n" +
+                        "11 - 6789ABCDEFGHIJKLMN\n" +
+                        "12 - 6789ABCDEFGHIJKLMN\n" +
+                        "13 - 6789ABCDEFGHIJKLMN\n" +
+                        "14 - 6789ABCDEFGHIJKLMN\n" +
+                        "15 - 6789ABCDEFGHIJKLMN\n" +
+                        "16 - 6789ABCDEFGHIJKLMN" )
                 null
             }
         }
