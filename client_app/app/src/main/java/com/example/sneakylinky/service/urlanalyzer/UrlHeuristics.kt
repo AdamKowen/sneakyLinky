@@ -189,11 +189,12 @@ fun hEncodedParts(canon: CanonUrl): Boolean {
      - MED_SCORE_AT_SUS   = 0.60   // score at r = SUS
      - MED_SCORE_AT_CRIT  = 1.00   // score at r = CRIT
    Scoring (lower ratio = worse), BUT exact match (r==0) → safe (score 0).
-   Log (if >0): "med: near=example.com r=0.09 s=1.00"
-   Log (if exact): "med: exact=example.com s=0.00"
+   Log (if >0): "med: apex=foo.com near=bar.com r=0.09 s=1.00"
+   Log (if exact): "med: exact=foo.com s=0.00"
 
    Added:
-     - data class MedResult(score, nearestDomain, ratio)
+     - apexDomainOf(...)       // host → registrable domain (eTLD+1)
+     - MedResult(score, nearestDomain, ratio)
      - hMedNearWhitelistInfo(...) → MedResult
      - hMedNearWhitelist(...)     → Double (back-compat wrapper)
    ──────────────────────────────────────────────────────────────────────────── */
@@ -203,43 +204,57 @@ private const val MED_SCORE_AT_SUS = 0.60
 private const val MED_SCORE_AT_CRIT = 1.00
 
 data class MedResult(
-    val score: Double,             // 0..1 (same as before)
-    val nearestDomain: String?,    // best whitelist match, if any
-    val ratio: Double?             // normalized Levenshtein ratio (0..1, lower=worse)
+    val score: Double,             // derived from ratio + thresholds
+    val nearestDomain: String?,    // best whitelist match
+    val ratio: Double?             // normalized distance [0..1], lower = closer
 )
 
+private fun apexDomainOf(canon: CanonUrl): String? {
+    val host = canon.hostAscii?.lowercase() ?: return null
+    val tld  = canon.tld?.lowercase() ?: return null
+    val labels = host.split('.').filter { it.isNotEmpty() }
+    val tldParts = tld.split('.').filter { it.isNotEmpty() }
+    val need = tldParts.size + 1
+    return if (labels.size >= need) labels.takeLast(need).joinToString(".") else host
+}
+
 suspend fun hMedNearWhitelistInfo(canon: CanonUrl): MedResult {
-    val host = canon.hostAscii?.lowercase() ?: return MedResult(0.0, null, null)
-    val whitelist = WhitelistSource.loader.invoke()
+    val apex = apexDomainOf(canon) ?: return MedResult(0.0, null, null)
+
+    val whitelist = WhitelistSource.loader.invoke().map { it.lowercase() }
     if (whitelist.isEmpty()) return MedResult(0.0, null, null)
 
-    var best = Double.POSITIVE_INFINITY
+    // Exact apex match → safe
+    if (apex in whitelist) {
+        Log.d(TAG, "med: exact=$apex s=0.00")
+        return MedResult(score = 0.0, nearestDomain = apex, ratio = 0.0)
+    }
+
+    // Compare apex against each whitelist entry using normalized Levenshtein
+    var bestRatio = Double.POSITIVE_INFINITY
     var nearest: String? = null
     for (w in whitelist) {
-        val r = medNormalizedLevenshtein(host, w)
-        if (r < best) { best = r; nearest = w }
+        val r = medNormalizedLevenshtein(apex, w)  // [0..1], lower is closer
+        if (r < bestRatio) { bestRatio = r; nearest = w }
     }
 
-    // Exact whitelist match → not suspicious (score 0), log and return
-    if (best <= 0.0 + 1e-12) {
-        nearest?.let { Log.d(TAG, "med: exact=$it s=0.00") }
-        return MedResult(score = 0.0, nearestDomain = nearest, ratio = 0.0)
-    }
+    val ratio = bestRatio.coerceIn(0.0, 1.0)
 
+    // Map ratio → score using thresholds
     val score = when {
-        best > MED_SUS_MAX_RATIO -> 0.0
-        best <= MED_CRIT_MAX_RATIO -> MED_SCORE_AT_CRIT
+        ratio > MED_SUS_MAX_RATIO -> 0.0
+        ratio <= MED_CRIT_MAX_RATIO -> MED_SCORE_AT_CRIT
         else -> {
             val span = (MED_SUS_MAX_RATIO - MED_CRIT_MAX_RATIO).coerceAtLeast(1e-9)
-            val t = (MED_SUS_MAX_RATIO - best) / span // 0..1 (closer→bigger)
+            val t = (MED_SUS_MAX_RATIO - ratio) / span // 0..1 (closer→bigger)
             MED_SCORE_AT_SUS + t * (MED_SCORE_AT_CRIT - MED_SCORE_AT_SUS)
         }
     }.coerceIn(0.0, 1.0)
 
     if (score > 0.0) {
-        Log.d(TAG, "med: near=${nearest ?: "-"} r=${"%.2f".format(best)} s=${"%.2f".format(score)}")
+        Log.d(TAG, "med: apex=$apex near=${nearest ?: "-"} r=${"%.2f".format(ratio)} s=${"%.2f".format(score)}")
     }
-    return MedResult(score = score, nearestDomain = nearest, ratio = best)
+    return MedResult(score = score, nearestDomain = nearest, ratio = ratio)
 }
 
 private fun medNormalizedLevenshtein(a: String, b: String): Double {
@@ -393,6 +408,7 @@ fun hPhishKeywordsInfo(canon: CanonUrl): PhishKeywordsResult {
     return PhishKeywordsResult(score = score, hitCount = hits)
 }
 
+
 /* =============================================================================
    AGGREGATION (single entry point)
    - Run all tests (no short-circuit).
@@ -402,6 +418,9 @@ fun hPhishKeywordsInfo(canon: CanonUrl): PhishKeywordsResult {
    - Return only Reason list (no per-test scores).
    ============================================================================= */
 suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecision {
+    // one-line start marker with key context
+    Log.d(TAG, "run: host=${canon.hostAscii ?: "-"} scheme=${canon.scheme} port=${canon.port ?: "-"} len=${canon.originalUrl.length}")
+
     val present = linkedSetOf<Reason>()                       // ordered, unique
     val softContribs = mutableListOf<Pair<Reason, Double>>()  // non-critical only
     val details = mutableListOf<ReasonDetail>()               // user-facing messages
@@ -505,7 +524,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
 
     val blocked = hasCritical || (softTotal >= BLOCK_THRESHOLD)
 
-    // ---------- Compact final log (unchanged) ----------
+    // ---------- Compact final log (unchanged + counts) ----------
     val critTags = present.filter { it in CRITICAL_REASONS }.joinToString(",") { tag(it) }
     val softTags = present.filter { it !in CRITICAL_REASONS }.joinToString(",") { tag(it) }
     val msg = buildList {
@@ -513,6 +532,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         add("crit=${if (hasCritical) "1" else "0"}")
         if (critTags.isNotEmpty()) add("hard[$critTags]")
         if (softTags.isNotEmpty()) add("soft[$softTags]")
+        add("reasons=${present.size} msgs=${details.size}")
         add("block=$blocked")
     }.joinToString(" ")
     Log.d(TAG, msg)

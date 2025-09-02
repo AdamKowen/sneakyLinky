@@ -2,8 +2,8 @@
 package com.example.sneakylinky.service
 
 import android.content.Context
+import android.util.Log
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import com.example.sneakylinky.LinkContextCache
 import com.example.sneakylinky.SneakyLinkyApp
 import com.example.sneakylinky.service.report.HistoryStore
@@ -11,10 +11,8 @@ import com.example.sneakylinky.service.report.LocalCheck
 import com.example.sneakylinky.service.report.RemoteStatus
 import com.example.sneakylinky.service.serveranalysis.MessageAnalyzer
 import com.example.sneakylinky.service.serveranalysis.UrlAnalyzer
-import com.example.sneakylinky.service.urlanalyzer.CanonicalParseResult
-import com.example.sneakylinky.service.urlanalyzer.CanonUrl
-import com.example.sneakylinky.service.urlanalyzer.canonicalize
-import com.example.sneakylinky.service.urlanalyzer.isLocalSafe
+import com.example.sneakylinky.service.urlanalyzer.Verdict
+import com.example.sneakylinky.service.urlanalyzer.evaluateUrl
 import com.example.sneakylinky.ui.MainActivity
 import com.example.sneakylinky.util.UiNotices
 import com.example.sneakylinky.util.launchInSelectedBrowser
@@ -25,86 +23,82 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 object LinkFlow {
+    private const val TAG = "LinkFlow"
 
     // Single entry-point used by both activities
-    suspend fun runLinkFlow(
-        context: Context,
-        raw: String,
-        contextText: String? = null
-    ) {
+    suspend fun runLinkFlow(context: Context, raw: String, contextText: String? = null) {
+
+        Log.d(TAG, "\nrun start raw=${raw.take(120)}")
         val runId = HistoryStore.createRun(context, raw, contextText)
+        Log.d(TAG, "runId=$runId created")
 
-        val finalUrl = resolveFinalOrWarn(context, runId, raw) ?: return
-        val canon    = canonicalizeOrWarn(context, runId, finalUrl) ?: return
-
-        val isSafe = performLocalCheckAndMark(context, runId, finalUrl, canon)
-        if (!isSafe) {
-            rememberUrl(context, finalUrl)
-            UiNotices.showWarning(context, finalUrl, "Link found to be suspicious. Proceed with caution.")
+        val finalUrl = resolveFinalOrWarn(context, runId, raw)
+        if (finalUrl == null) {
+            Log.d(TAG, "resolve failed → warned & exit")
             return
         }
 
-        // Locally safe → open browser and mark opened
-        rememberUrl(context, finalUrl)
-        openSelectedBrowserAndMarkOpened(context, runId, finalUrl)
+        Log.d(TAG, "resolved finalUrl=$finalUrl")
 
-        // Kick off remote scans (URL + message context) and show a single summary toast
-        launchRemoteScansCombined(context, runId, finalUrl, contextText)
+        val urlEvaluation = evaluateUrl(finalUrl)
+        Log.d(TAG,"evaluated verdict=${urlEvaluation.verdict} reasons=${urlEvaluation.reasonDetails.size}" +
+                    (urlEvaluation.reasonDetails.firstOrNull()?.let { " firstReason=${it.reason}" } ?: ""))
+
+        if (urlEvaluation.verdict == Verdict.BLOCK){
+            Log.d(TAG, "BLOCK → markLocal(SUSPICIOUS) + toast")
+            HistoryStore.markLocal(context, runId, LocalCheck.SUSPICIOUS, null, null)
+            UiNotices.showWarning(context, finalUrl, urlEvaluation.reasonDetails[0].message) // todo: go over all reasons
+            return
+        } else {
+            Log.d(TAG, "SAFE → markLocal(SAFE)")
+            HistoryStore.markLocal(context, runId, LocalCheck.SAFE, finalUrl, null)
+
+            // Locally safe → open browser and mark opened
+            Log.d(TAG, "rememberUrl + openSelectedBrowser")
+            rememberUrl(context, finalUrl)
+            openSelectedBrowserAndMarkOpened(context, runId, finalUrl)
+            Log.d(TAG, "opened in browser & marked opened")
+
+            // Kick off remote scans (URL + message context) and show a single summary toast
+            Log.d(TAG, "launch remote scans (parallel)")
+            launchRemoteScansCombined(context, runId, finalUrl, contextText)
+        }
+        Log.d(TAG, "run end")
     }
 
     // --- Step 1: Resolve ---
 
-    private suspend fun resolveFinalOrWarn(
-        context: Context,
-        runId: Long,
-        raw: String
-    ): String? = withContext(Dispatchers.IO) {
+    private suspend fun resolveFinalOrWarn(context: Context, runId: Long, raw: String):
+            String? = withContext(Dispatchers.IO) {
         when (val res = LinkChecker.resolveUrl(raw)) {
             is LinkChecker.UrlResolutionResult.Success -> res.finalUrl
             else -> {
                 rememberUrl(context, raw)
                 HistoryStore.markLocal(context, runId, LocalCheck.ERROR, null, null)
-                UiNotices.showWarning(context, raw, "Internal error: could not verify link safely")
+                UiNotices.showWarning(context, raw,
+                    "Failed to resolve the link: " +
+                            "$raw\n" +
+                        "3 - 56789ABCDEFGHIJKLMN\n" +
+                        "4 - 56789ABCDEFGHIJKLMN\n" +
+                        "5 - 56789ABCDEFGHIJKLMN\n" +
+                        "6 - 56789ABCDEFGHIJKLMN\n" +
+                        "7 - 56789ABCDEFGHIJKLMN\n" +
+                        "8 - 56789ABCDEFGHIJKLMN\n" +
+                        "9 - 56789ABCDEFGHIJKLMN\n" +
+                        "10 - 56789ABCDEFGHIJKLM\n" )
                 null
             }
         }
     }
 
-    // --- Step 2: Canonicalize ---
-
-    private suspend fun canonicalizeOrWarn(
-        context: Context,
-        runId: Long,
-        url: String
-    ): CanonUrl? = when (val r = url.canonicalize()) {
-        is CanonicalParseResult.Success -> r.canonUrl
-        else -> {
-            rememberUrl(context, url)
-            HistoryStore.markLocal(context, runId, LocalCheck.ERROR, url, null)
-            UiNotices.showWarning(context, url, "Internal error: could not verify link safely")
-            null
+    private suspend fun resolveFinalUrl(raw: String): String? =
+        withContext(Dispatchers.IO) {
+            when (val res = LinkChecker.resolveUrl(raw)) {
+                is LinkChecker.UrlResolutionResult.Success -> res.finalUrl
+                else -> null
+            }
         }
-    }
 
-    // --- Step 3: Local check (host, lists, heuristics) ---
-
-    private suspend fun performLocalCheckAndMark(
-        context: Context,
-        runId: Long,
-        finalUrl: String,
-        canon: CanonUrl
-    ): Boolean {
-        val isSafe = withContext(Dispatchers.IO) { canon.isLocalSafe() }
-        val host   = finalUrl.toUri().host
-        HistoryStore.markLocal(
-            context,
-            runId,
-            if (isSafe) LocalCheck.SAFE else LocalCheck.SUSPICIOUS,
-            finalUrl,
-            host
-        )
-        return isSafe
-    }
 
     // --- Step 4: Open in selected browser and record ---
 
@@ -201,19 +195,7 @@ object LinkFlow {
             ?: LinkContextCache.surroundingTxt?.takeIf { it.isNotBlank() }
     }
 
-    private fun canonicalizeOrNull(url: String): CanonUrl? =
-        when (val r = url.canonicalize()) {
-            is CanonicalParseResult.Success -> r.canonUrl
-            else -> null
-        }
 
-    private suspend fun resolveFinalUrl(raw: String): String? =
-        withContext(Dispatchers.IO) {
-            when (val res = LinkChecker.resolveUrl(raw)) {
-                is LinkChecker.UrlResolutionResult.Success -> res.finalUrl
-                else -> null
-            }
-        }
 
     // Shared: remember last URL in memory + persist for process restarts
     private fun rememberUrl(context: Context, url: String) {

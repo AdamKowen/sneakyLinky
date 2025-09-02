@@ -28,12 +28,12 @@ enum class ListCheckResult {
    - canon  : returned for convenience to downstream consumers
    ──────────────────────────────────────────────────────────────────────────── */
 enum class Verdict { SAFE, BLOCK }
-enum class DecisionSource { PARSE_ERROR, WHITELIST, BLACKLIST, HEURISTICS }
+enum class DecisionSource { CANON_PARSE_ERROR, WHITELIST, BLACKLIST, HEURISTICS }
 
 data class UrlEvaluation(
     val verdict: Verdict,
     val source: DecisionSource,
-    val reasonDetails: List<ReasonDetail> = emptyList(), // ← NEW
+    val reasonDetails: List<ReasonDetail> = emptyList(),
     val score: Double = 0.0,
     val canon: CanonUrl? = null
 )
@@ -71,7 +71,7 @@ suspend fun evaluateUrl(raw: String): UrlEvaluation {
         Log.d(tag, "parse: fail → block (PARSE_ERROR)")
         return UrlEvaluation(
             verdict = Verdict.BLOCK,
-            source = DecisionSource.PARSE_ERROR
+            source = DecisionSource.CANON_PARSE_ERROR
         )
     }
 
@@ -128,6 +128,7 @@ fun populateTestData() {
 
         // Seed a (truncated) whitelist. Expand as you like.
         val entries = listOf(
+            "bankhapoalim.co.il/","ynetnews.com",
             "adobe.com","aliexpress.com","amazon.co.jp","amazon.co.uk","amazon.com",
             "amazon.de","amazon.in","apple.com","baidu.com","bbc.co.uk","bbc.com",
             "bilibili.com","bing.com","booking.com","canva.com","chatgpt.com",

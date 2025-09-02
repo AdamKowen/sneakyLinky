@@ -1,42 +1,92 @@
 //// File: app/src/test/java/com/example/sneakylinky/service/urlanalyzer/UrlHeuristicsUnitTest.kt
 package com.example.sneakylinky.service.urlanalyzer
-//
-//import org.junit.Assert.*
-//import org.junit.Test
-//import org.junit.runner.RunWith
-//import org.robolectric.RobolectricTestRunner
-//import org.robolectric.annotation.Config
-//import org.robolectric.shadows.ShadowLog
-//import org.junit.BeforeClass
-//import org.junit.AfterClass
-//
-//
-///* ──────────────────────────────────────────────────────────────────────────────
-//   - Unit tests per heuristic (boolean & numeric).
-//   - Uses real CanonUrl parser via toCanonUrlOrNull(); no network/redirects.
-//   - MED tests are @Ignore by default due to AppDatabase dependency.
-//   ──────────────────────────────────────────────────────────────────────────── */
-//@RunWith(RobolectricTestRunner::class)
-//@Config(manifest = Config.NONE)
-//class UrlHeuristicsUnitTest {
-//
-//    companion object {
-//        @BeforeClass @JvmStatic
-//        fun enableLogcatForThisClass() {
-//            ShadowLog.stream = System.out   // send android.util.Log to test output
-//        }
-//
-//        @AfterClass @JvmStatic
-//        fun disableLogcatForThisClass() {
-//            ShadowLog.stream = null
-//        }
-//    }
-//
-//    /* =======================
-//       Critical booleans
-//       ======================= */
-//
-//    @Test fun ipHost_ipv4_true() {
+
+import org.junit.Assert.*
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLog
+import org.junit.BeforeClass
+import org.junit.AfterClass
+
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   - Unit tests per heuristic (boolean & numeric).
+   - Uses real CanonUrl parser via toCanonUrlOrNull(); no network/redirects.
+   - MED tests are @Ignore by default due to AppDatabase dependency.
+   ──────────────────────────────────────────────────────────────────────────── */
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
+class UrlHeuristicsUnitTest {
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun enableLogcatForThisClass() {
+            ShadowLog.stream = System.out   // send android.util.Log to test output
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun disableLogcatForThisClass() {
+            ShadowLog.stream = null
+        }
+    }
+
+    /* =======================
+       MED (DB-dependent) — ignored by default
+       ======================= */
+
+    @Test
+    fun medNearWhitelist_close_domain_scores() {
+        val c = "https://examp1e.com/".toCanonUrlOrNull()!!
+        val saved = WhitelistSource.loader
+        try {
+            // Inject a fake whitelist for this test (no real DB needed)
+            WhitelistSource.loader = { listOf("example.com", "google.com") }
+
+            val info = kotlinx.coroutines.runBlocking { hMedNearWhitelistInfo(c) }
+
+            // Prints for visibility in test output (in addition to Logcat via ShadowLog)
+            println("[MED close] nearest=${info.nearestDomain} ratio=${info.ratio} score=${info.score}")
+
+            // Expect >0 when whitelist contains "example.com"
+            assertTrue("expected >0 when seeded with example.com", info.score > 0.0)
+
+            // Optional stronger checks (uncomment if you want)
+            // assertEquals("example.com", info.nearestDomain)
+            // assertTrue("ratio should be <= 0.20 to score > 0", (info.ratio ?: 1.0) <= 0.20)
+        } finally {
+            WhitelistSource.loader = saved
+        }
+    }
+
+    @Test
+    fun medNearWhitelist_far_domain_zero() {
+        val c = "https://totally-unrelated.host/".toCanonUrlOrNull()!!
+        val saved = WhitelistSource.loader
+        try {
+            // Inject a fake whitelist for this test (no real DB needed)
+            WhitelistSource.loader = { listOf("example.com", "google.com") }
+
+            val info = kotlinx.coroutines.runBlocking { hMedNearWhitelistInfo(c) }
+
+            println("[MED far] nearest=${info.nearestDomain} ratio=${info.ratio} score=${info.score}")
+
+            // With the fake whitelist, unrelated host should score 0
+            assertEquals("expected 0 for unrelated host", 0.0, info.score, 1e-9)
+        } finally {
+            WhitelistSource.loader = saved
+        }
+    }
+}
+    /* =======================
+       Critical booleans
+       ======================= */
+
+//    @Test
+//    fun ipHost_ipv4_true() {
 //        val c = "http://192.168.0.1/".toCanonUrlOrNull()!!
 //        assertTrue(hIpHost(c))
 //    }
@@ -174,39 +224,8 @@ package com.example.sneakylinky.service.urlanalyzer
 //        assertTrue("expected near/full 1.0", hPhishKeywords(c) >= 0.99)
 //    }
 //
-//    /* =======================
-//       MED (DB-dependent) — ignored by default
-//       ======================= */
-//
-//    @Test
-//    fun medNearWhitelist_close_domain_scores() {
-//        val c = "https://examp1e.com/".toCanonUrlOrNull()!!
-//        val saved = WhitelistSource.loader
-//        try {
-//            // Inject a fake whitelist for this test (no real DB needed)
-//            WhitelistSource.loader = { listOf("example.com", "google.com") }
-//            val s = kotlinx.coroutines.runBlocking { hMedNearWhitelist(c) }
-//            // Expect s > 0 when whitelist contains "example.com"
-//            assertTrue("expected >0 when seeded with example.com", s > 0.0)
-//        } finally {
-//            WhitelistSource.loader = saved
-//        }
-//    }
-//
-//    @Test
-//    fun medNearWhitelist_far_domain_zero() {
-//        val c = "https://totally-unrelated.host/".toCanonUrlOrNull()!!
-//        val saved = WhitelistSource.loader
-//        try {
-//            // Inject a fake whitelist for this test (no real DB needed)
-//            WhitelistSource.loader = { listOf("example.com", "google.com") }
-//            val s = kotlinx.coroutines.runBlocking { hMedNearWhitelist(c) }
-//            // With the fake whitelist, unrelated host should score 0
-//            assertEquals("expected 0 for unrelated host", 0.0, s, 1e-9)
-//        } finally {
-//            WhitelistSource.loader = saved
-//        }
-//    }
+
+
 //
 //    /* =======================
 //   analyzeAndDecide — larger end-to-end cases

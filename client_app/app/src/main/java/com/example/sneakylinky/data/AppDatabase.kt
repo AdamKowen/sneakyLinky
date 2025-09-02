@@ -9,7 +9,6 @@ import com.example.sneakylinky.service.report.LinkHistory
 
 @Database(
     entities = [
-        CachedHostEntry::class, // todo : remove
         WhitelistEntry::class,
         BlacklistEntry::class,
         LinkHistory::class
@@ -20,7 +19,6 @@ import com.example.sneakylinky.service.report.LinkHistory
 
 
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun hostCacheDao(): HostCacheDao // todo : remove
     abstract fun whitelistDao(): WhitelistDao
     abstract fun blacklistDao(): BlacklistDao
     abstract fun linkHistoryDao(): LinkHistoryDao
