@@ -65,100 +65,122 @@ object LinkChecker {
         }
     }
 
-        /**
-         * Attempts to resolve a given URL by issuing only HTTP HEAD requests.
-         * Follows redirects manually up to a specified limit.
-         *
-         * @param url Absolute URL to inspect.
-         * @param maxRedirects Maximum number of redirect hops to follow (default is 5).
-         * @return A [UrlResolutionResult] representing either a success or a failure.
-         */
-        fun resolveUrl(
-            url: String,
-            maxRedirects: Int = DEFAULT_REDIRECT_LIMIT
-        ): UrlResolutionResult {
+    /**
+     * Attempts to resolve a given URL by issuing only HTTP HEAD requests.
+     * Follows redirects manually up to a specified limit.
+     *
+     * @param url Absolute URL to inspect.
+     * @param maxRedirects Maximum number of redirect hops to follow (default is 5).
+     * @return A [UrlResolutionResult] representing either a success or a failure.
+     */
+    fun resolveUrl(
+        url: String,
+        maxRedirects: Int = DEFAULT_REDIRECT_LIMIT
+    ): UrlResolutionResult {
 
-            // --- normalize scheme --------------------------------------------------------
-            var sanitized = url.trim()
+        var httpsUpgradeAttempted = false
 
-            val hasScheme = sanitized.startsWith("http://", true) ||
-                    sanitized.startsWith("https://", true)
+        // --- normalize scheme --------------------------------------------------------
+        var sanitized = url.trim()
 
-            if (!hasScheme) sanitized = "https://$sanitized"
-            // -----------------------------------------------------------------------------
+        val hasScheme = sanitized.startsWith("http://", true) ||
+                sanitized.startsWith("https://", true)
+
+        if (!hasScheme) sanitized = "https://$sanitized"
+        // -----------------------------------------------------------------------------
 
 
-            var current = HttpUrl.parse(sanitized)
-                ?: return UrlResolutionResult.Failure(
-                    sanitized,
-                    UrlResolutionResult.ErrorCause.INVALID_URL
-                )
+        var current = HttpUrl.parse(sanitized)
+            ?: return UrlResolutionResult.Failure(
+                sanitized,
+                UrlResolutionResult.ErrorCause.INVALID_URL
+            )
 
-            val visited = mutableSetOf<HttpUrl>()
-            var hops = 0
+        val visited = mutableSetOf<HttpUrl>()
+        var hops = 0
 
-            while (hops <= maxRedirects) {
+        while (hops <= maxRedirects) {
 
-                try {
-                    client.newCall(buildHeadRequest(current)).execute().use { res ->
+            try {
+                client.newCall(buildHeadRequest(current)).execute().use { res ->
 
-                        when {
-                            res.code() < 300 || res.code() >= 400 -> {
-                                return UrlResolutionResult.Success(
+                    when {
+                        res.code() < 300 || res.code() >= 400 -> {
+                            return UrlResolutionResult.Success(
+                                sanitized,
+                                current.toString(),
+                                hops,
+                                res.code()
+                            )
+                        }
+
+                        res.code() in 300..399 -> {
+                            val next = nextHop(res)
+
+                            if (next == null) {
+                                return UrlResolutionResult.Failure(
                                     sanitized,
-                                    current.toString(),
-                                    hops,
-                                    res.code()
+                                    UrlResolutionResult.ErrorCause.UNRECOVERABLE_LOCATION,
+                                    hops
                                 )
                             }
 
-                            res.code() in 300..399 -> {
-                                val next = nextHop(res)
-
-                                if (next == null) {
-                                    return UrlResolutionResult.Failure(
-                                        sanitized,
-                                        UrlResolutionResult.ErrorCause.UNRECOVERABLE_LOCATION,
-                                        hops
-                                    )
-                                }
-
-                                if (!visited.add(next)) {
-                                    return UrlResolutionResult.Failure(
-                                        sanitized,
-                                        UrlResolutionResult.ErrorCause.LOOP_DETECTED,
-                                        hops
-                                    )
-                                }
-
-                                current = next
-                                hops++
+                            if (!visited.add(next)) {
+                                return UrlResolutionResult.Failure(
+                                    sanitized,
+                                    UrlResolutionResult.ErrorCause.LOOP_DETECTED,
+                                    hops
+                                )
                             }
 
-                            else -> {}
+                            current = next
+                            hops++
                         }
-                    }
-                } catch (e: IOException) {
-                    return UrlResolutionResult.Failure(
-                        sanitized,
-                        UrlResolutionResult.ErrorCause.NETWORK_EXCEPTION,
-                        hops
-                    )
-                } catch (e: Exception) {
-                    return UrlResolutionResult.Failure(
-                        sanitized,
-                        UrlResolutionResult.ErrorCause.UNKNOWN,
-                        hops
-                    )
-                }
-            }
 
-            return UrlResolutionResult.Failure(
-                sanitized,
-                UrlResolutionResult.ErrorCause.EXCEEDED_REDIRECT_LIMIT,
-                hops
-            )
+                        else -> {}
+                    }
+                }
+            } catch (e: IOException) {
+                // comments in English only
+                val isCleartextBlocked =
+                    (e is java.net.UnknownServiceException) &&
+                            (e.message?.contains("CLEARTEXT", ignoreCase = true) == true)
+
+                if (!httpsUpgradeAttempted &&
+                    current.scheme().equals("http", ignoreCase = true) &&
+                    isCleartextBlocked
+                ) {
+                    httpsUpgradeAttempted = true
+                    val httpsUrl = try { current.newBuilder().scheme("https").build() } catch (_: Throwable) { null }
+                    if (httpsUrl != null) {
+                        sanitized = sanitized.replaceFirst(Regex("^http://", RegexOption.IGNORE_CASE), "https://")
+                        current = httpsUrl
+                        // retry same hop over HTTPS (do NOT increment hops)
+                        continue
+                    }
+                    // fall through to Failure if httpsUrl is null
+                }
+
+                return UrlResolutionResult.Failure(
+                    sanitized,
+                    UrlResolutionResult.ErrorCause.NETWORK_EXCEPTION,
+                    hops
+                )
+            } catch (e: Exception) {
+                return UrlResolutionResult.Failure(
+                    sanitized,
+                    UrlResolutionResult.ErrorCause.UNKNOWN,
+                    hops
+                )
+            }
         }
+
+        return UrlResolutionResult.Failure(
+            sanitized,
+            UrlResolutionResult.ErrorCause.EXCEEDED_REDIRECT_LIMIT,
+            hops
+        )
+    }
 
 
     /** Builds a HEAD request for the specified URL. */
