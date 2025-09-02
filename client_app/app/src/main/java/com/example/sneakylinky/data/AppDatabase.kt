@@ -5,18 +5,25 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.sneakylinky.service.report.LinkHistory
 
 @Database(
     entities = [
+        CachedHostEntry::class, // todo : remove
         WhitelistEntry::class,
-        BlacklistEntry::class
+        BlacklistEntry::class,
+        LinkHistory::class
     ],
-    version = 4,            // bumped because we dropped a table
+    version = 5,
     exportSchema = false
 )
+
+
 abstract class AppDatabase : RoomDatabase() {
+    abstract fun hostCacheDao(): HostCacheDao // todo : remove
     abstract fun whitelistDao(): WhitelistDao
     abstract fun blacklistDao(): BlacklistDao
+    abstract fun linkHistoryDao(): LinkHistoryDao
 
     companion object {
         @Volatile

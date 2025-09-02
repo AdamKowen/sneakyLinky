@@ -1,26 +1,178 @@
-:root { --violet:#6366f1; --bg:#f6f7fb; --ink:#111827; --muted:#6b7280; }
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
-.admin-shell { display:grid; grid-template-columns: 260px 1fr; min-height: 100dvh; background: var(--bg); color: var(--ink); }
+
+body {
+  font-family: 'Montserrat', sans-serif;
+}
+
+:root {
+  --violet: #6366f1;
+  --bg: #f6f7fb;
+  --ink: #111827;
+  --muted: #6b7280;
+}
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
 .sidebar {
-  background: radial-gradient(120% 120% at 10% 10%, #3f3dbd, #1f1b5a);
-  color:#fff; display:flex; flex-direction:column; padding:18px; gap:18px;
+  background: radial-gradient(120% 120% at 10% 10%, #5855eb, #5855ebc0);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  gap: 18px;
 }
-.brand { font-weight:800; line-height:1.2; letter-spacing:.2px; }
-.nav { display:grid; gap:8px; }
-.nav-item { color:#cfd2ff; text-decoration:none; padding:10px 12px; border-radius:10px; }
-.nav-item.active, .nav-item:hover { background:rgba(255,255,255,.14); color:white; }
-.sidebar-footer { margin-top:auto; opacity:.6; }
 
-.main { display:flex; flex-direction:column; min-width:0; }
+.brand {
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: .2px;
+}
+
+.nav {
+  display: grid;
+  gap: 8px;
+}
+
+.nav-item {
+  color: #cfd2ff;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.nav-item.active,
+.nav-item:hover {
+  background: rgba(255, 255, 255, .14);
+  color: white;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  opacity: .6;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .topbar {
-  display:flex; align-items:center; justify-content:space-between;
-  background: linear-gradient(90deg, #7c43f9, #5d5df6);
-  color:rgb(255, 255, 255); padding:14px 20px; box-shadow:0 6px 18px rgba(0,0,0,.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #5855eb, #5855eb);
+  color: rgb(255, 255, 255);
+  padding: 14px 20px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
 }
-.topbar-title { margin:0; font-size:18px; font-weight:700; }
-.topbar-actions { display:flex; align-items:center; gap:10px; }
-.badge { background:rgba(255,255,255,.18); padding:6px 10px; border-radius:999px; font-size:12px; }
-.avatar { width:32px; height:32px; border-radius:50%; border:2px solid rgba(255,255,255,.65); background:rgb(96, 8, 212); }
 
-.toast-area { position:relative; }
-.content { padding:22px; display:grid; gap:20px; }
+.topbar-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge {
+  background: rgba(255, 255, 255, .18);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .65);
+  background: rgb(96, 8, 212);
+}
+
+.toast-area {
+  position: relative;
+}
+
+.content {
+  padding: 22px;
+  display: grid;
+  gap: 20px;
+}
+
+
+
+/* 📱 MOBILE & TABLET RESPONSIVE */
+@media (max-width: 1024px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+    /* מסיר את הסיידבר */
+    grid-template-rows: auto 1fr;
+  }
+
+  .sidebar {
+    order: -2;
+    /* מעביר לראש */
+    padding: 12px;
+    gap: 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    min-height: auto;
+    position: sticky;
+    top: 0;
+    z-index: 1001;
+  }
+
+  .brand {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .nav-item {
+    white-space: nowrap;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  .topbar {
+    order: -1;
+    padding: 4px 16px;
+    position: sticky;
+    /* 📌 קבוע */
+    top: 50px;
+    /* מתחת לסיידבר */
+    z-index: 1000;
+  }
+
+  .topbar-title {
+    font-size: 16px;
+  }
+
+  .content {
+    padding: 16px 12px;
+    gap: 16px;
+  }
+}

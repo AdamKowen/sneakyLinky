@@ -20,8 +20,9 @@ const { addDomainToDB } = require('./services/domainService'); // ← update pat
 
 // ---- Config ----
 const CSV_PATH = process.argv[2];
-const COLUMN_NAME = 'IDN_Domain'; // expected header name
+const COLUMN_NAME = 'url'; // expected header name
 const TOTAL_EXPECTED = 1_000_000; // adjust if known total differs
+const MAX_ROWS = 1050; // maximum rows to process
 
 if (!CSV_PATH) {
   console.error('Usage: node load_domains.js <path-to-csv>');
@@ -34,6 +35,22 @@ const LDH = /^[a-z0-9-]+$/i; // letters/digits/hyphen per label
 
 function isAscii(s) {
   return ASCII_ONLY.test(s);
+}
+
+function extractHostname(urlOrDomain) {
+  try {
+    // If it looks like a URL, extract hostname
+    if (urlOrDomain.includes('://')) {
+      const url = new URL(urlOrDomain);
+      return url.hostname;
+    }
+    // Otherwise, assume it's already a hostname/domain
+    return urlOrDomain;
+  } catch (e) {
+    // If URL parsing fails, try to extract manually
+    const match = urlOrDomain.match(/^https?:\/\/([^\/]+)/);
+    return match ? match[1] : urlOrDomain;
+  }
 }
 
 function isValidHostname(hostname) {
@@ -56,6 +73,7 @@ function isValidHostname(hostname) {
   let inserted = 0;
   let skippedNonAscii = 0;
   let skippedInvalid = 0;
+  let processed = 0; // total rows processed (including skipped)
 
   const parser = fs
     .createReadStream(CSV_PATH)
@@ -70,6 +88,17 @@ function isValidHostname(hostname) {
 
   try {
     for await (const row of parser) {
+      if (processed >= MAX_ROWS) {
+        console.log(`\n🛑 Reached maximum limit of ${MAX_ROWS} rows. Stopping.`);
+        break;
+      }
+
+      // Debug: show first few rows structure
+      if (processed < 3) {
+        console.log(`Row ${processed + 1} keys:`, Object.keys(row));
+        console.log(`Row ${processed + 1} data:`, row);
+      }
+
       let domainRaw =
         row[COLUMN_NAME] ??
         row.IDN_Domain ??
@@ -77,21 +106,34 @@ function isValidHostname(hostname) {
         row.Domain ??
         row.domain;
 
-      if (!domainRaw) continue;
+      if (!domainRaw) {
+        if (processed < 5) {
+          console.log(`Row ${processed + 1}: No domain found in any column`);
+        }
+        continue;
+      }
+      
+      processed++;
 
       if (!isAscii(domainRaw)) {
         skippedNonAscii++;
         continue;
       }
 
-      let domain = String(domainRaw).trim().toLowerCase();
+      // Extract hostname from URL if needed
+      let domain = extractHostname(String(domainRaw).trim().toLowerCase());
+      
+      if (processed < 5) {
+        console.log(`Row ${processed}: "${domainRaw}" -> extracted: "${domain}"`);
+      }
+      
       if (!isValidHostname(domain)) {
         skippedInvalid++;
         continue;
       }
 
       try {
-        await addDomainToDB(domain, 0);
+        await addDomainToDB(domain, 1);
         inserted++;
 
         if (inserted % 1000 === 0) {
@@ -109,6 +151,7 @@ function isValidHostname(hostname) {
     }
 
     console.log('✅ Done');
+    console.log(`Processed:           ${processed.toLocaleString()}`);
     console.log(`Inserted:            ${inserted.toLocaleString()}`);
     console.log(`Skipped (non-ASCII): ${skippedNonAscii.toLocaleString()}`);
     console.log(`Skipped (invalid):   ${skippedInvalid.toLocaleString()}`);

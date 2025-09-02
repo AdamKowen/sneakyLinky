@@ -30,6 +30,7 @@
             android:padding="24dp"
             android:gravity="center" />
 
+
         <Button
             android:id="@+id/proceedButton"
             android:layout_width="match_parent"

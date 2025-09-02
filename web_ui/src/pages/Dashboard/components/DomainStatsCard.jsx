@@ -47,7 +47,7 @@ export default function DomainStatsCard({ refreshKey = 0}) {
   };
 
   return (
-    <section className="card">
+    <section className="card domain-stats-card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 className="card-title">Domain Stats</h2>
         {loading && <span style={{ fontSize: '12px', color: '#6b7280' }}>⟳</span>}
@@ -57,7 +57,7 @@ export default function DomainStatsCard({ refreshKey = 0}) {
       <div className="stats-grid">
         <div className="stat-item">
           <div className="stat-number">{stats.total.toLocaleString()}</div>
-          <div className="stat-label">Total Domains</div>
+          <div className="stat-label">Total </div>
         </div>
         <div className="stat-item">
           <div className="stat-number suspicious-stat">{stats.suspicious.toLocaleString()}</div>

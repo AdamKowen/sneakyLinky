@@ -1,4 +1,12 @@
 <resources>
     <string name="app_name">Sneaky Linky</string>
     <string name="accessibility_service_description">Link Interceptor Service</string>
+    <string name="paste_text_here" />
+    <string name="submit_for_analysis" />
+
+    <string name="report_link_title">Report Link</string>
+    <string name="report_action">Report</string>
+    <string name="cancel">Cancel</string>
+    <string name="report_reason_hint">Why do you suspect this link?</string>
+
 </resources>
