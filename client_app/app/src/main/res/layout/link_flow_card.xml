@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/backgroundPurple"
+    android:padding="20dp">
+
+    <!-- Top card: Link clicked -->
+
+    <!-- Right panel: two toggles -->
+
+    <!-- BIG vertical arrow between top and bottom -->
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardLinkClicked"
+        android:layout_width="193dp"
+        android:layout_height="157dp"
+        android:layout_marginTop="168dp"
+        android:layout_marginEnd="16dp"
+        app:cardBackgroundColor="@color/card_selected_background"
+        app:cardCornerRadius="24dp"
+        app:cardUseCompatPadding="true"
+        app:layout_constraintEnd_toStartOf="@+id/panelToggles"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Keep content flexible; avoid fixed dp sizes -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <!-- Row: icon + title -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/link"
+                    app:tint="@android:color/white" />
+
+                <TextView
+                    android:id="@+id/tvLinkClicked"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Link clicked"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Compact CTA button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSetDefault"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minHeight="36dp"
+                android:text="Click to set SneakyLinky as default"
+                android:textColor="@android:color/white"
+                android:textSize="12dp"
+                app:iconPadding="8dp"
+                app:iconTint="@android:color/white" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <ImageView
+        android:id="@+id/ivArrowBranchLeft"
+        android:layout_width="52dp"
+        android:layout_height="115dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/arrow_left"
+        app:layout_constraintBottom_toTopOf="@id/cardOpensIn"
+        app:layout_constraintEnd_toStartOf="@id/panelToggles"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@id/cardLinkClicked"
+        app:layout_constraintTop_toBottomOf="@id/cardLinkClicked"
+        app:layout_constraintVertical_bias="0.736"
+        app:tint="@android:color/white" />
+
+    <ImageView
+        android:id="@+id/ivArrowBranchRight"
+        android:layout_width="54dp"
+        android:layout_height="76dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/arrow_right"
+        app:layout_constraintBottom_toTopOf="@id/cardOpensIn"
+        app:layout_constraintEnd_toStartOf="@id/panelToggles"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@id/cardLinkClicked"
+        app:layout_constraintTop_toBottomOf="@id/cardLinkClicked"
+        app:layout_constraintVertical_bias="0.306"
+        app:tint="@android:color/white" />
+
+    <ImageView
+        android:id="@+id/ivArrowDown"
+        android:layout_width="45dp"
+        android:layout_height="243dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:adjustViewBounds="true"
+        android:scaleType="fitXY"
+        android:src="@drawable/long_arrow"
+        app:layout_constraintBottom_toTopOf="@id/cardOpensIn"
+        app:layout_constraintEnd_toEndOf="@id/cardLinkClicked"
+        app:layout_constraintHorizontal_bias="0.76"
+        app:layout_constraintStart_toStartOf="@id/cardLinkClicked"
+        app:layout_constraintTop_toBottomOf="@id/cardLinkClicked"
+        app:tint="@android:color/white" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/panelToggles"
+        android:layout_width="161dp"
+        android:layout_height="211dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="180dp"
+        app:cardBackgroundColor="@color/card_selected_background"
+        app:cardCornerRadius="24dp"
+        app:cardUseCompatPadding="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/cardLinkClicked"
+        app:layout_constraintTop_toTopOf="@id/cardLinkClicked">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <!-- Toggle: Background link check (label top, switch below) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/cloud_icon"
+                        app:tint="@android:color/white" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Background link check"
+                        android:textColor="@android:color/white" />
+                </LinearLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchCloudLinks"
+                    android:layout_width="116dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textOff=""
+                    android:textOn=""
+                    app:showText="false" />
+            </LinearLayout>
+
+            <!-- Toggle: Background message check (label top, switch below) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/message"
+                        app:tint="@android:color/white" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Background message check"
+                        android:textColor="@android:color/white" />
+                </LinearLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchMsgCheck"
+                    android:layout_width="129dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textOff=""
+                    android:textOn=""
+                    app:showText="false" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardOpensIn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        app:cardBackgroundColor="@color/card_selected_background"
+        app:cardCornerRadius="28dp"
+        app:cardUseCompatPadding="true"
+        app:layout_constraintEnd_toStartOf="@id/panelToggles"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivArrowDown">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Opens in:"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <Space
+                android:layout_width="12dp"
+                android:layout_height="0dp" />
+
+            <!-- Browser icon button (actual chosen browser icon) -->
+            <ImageButton
+                android:id="@+id/btnChosenBrowser"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/browser"
+                app:tint="@android:color/white" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <LinearLayout
+        android:id="@+id/stripLocalAnalysis"
+        android:layout_width="127dp"
+        android:layout_height="100dp"
+        android:layout_marginEnd="-6dp"
+        android:elevation="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="@id/ivArrowDown"
+        app:layout_constraintEnd_toStartOf="@id/ivArrowDown"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@id/cardLinkClicked"
+        app:layout_constraintTop_toTopOf="@id/ivArrowDown"
+        app:layout_constraintVertical_bias="0.538">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/shield"
+            app:tint="@android:color/white" />
+
+        <TextView
+            android:layout_width="91dp"
+            android:layout_height="68dp"
+            android:text="Instant on-device URL analysis"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
+
+    <!-- Curved branch arrows (kept; positioned neatly between columns) -->
+
+    <!-- Left-side info strip: small shield icon + text (slightly overlapping arrow) -->
+
+    <!-- Bottom card: Opens in + chosen browser icon -->
+
+</androidx.constraintlayout.widget.ConstraintLayout>
