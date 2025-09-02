@@ -441,7 +441,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
     if (hUnfamiliarTld(canon)) {
         present += Reason.UNFAMILIAR_TLD
         val tld = canon.tld ?: "unknown"
-        details += ReasonDetail(Reason.UNFAMILIAR_TLD, "Unfamiliar domain ending: **$tld**.")
+        details += ReasonDetail(Reason.UNFAMILIAR_TLD, "Unfamiliar domain ending: $tld.")
     }
 
     // ---------- Booleans — NON-CRITICAL ----------
@@ -458,9 +458,9 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         }
         val humanScheme = scheme.uppercase()
         val msg = if (expected != null)
-            "$humanScheme uses a non-default port: **$port** (expected **$expected**)."
+            "$humanScheme uses a non-default port: $port (expected $expected)."
         else
-            "Uses a non-default network port: **$port**."
+            "Uses a non-default network port: $port."
         details += ReasonDetail(Reason.PORT_SCHEME_MISMATCH, msg)
     }
 
@@ -476,7 +476,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
     if (medInfo.score > 0.0) {
         present += Reason.NEAR_WHITELIST_LOOKALIKE
         softContribs += Reason.NEAR_WHITELIST_LOOKALIKE to medInfo.score
-        val msg = medInfo.nearestDomain?.let { "Not **$it** — just looks similar." }
+        val msg = medInfo.nearestDomain?.let { "This is not $it — just looks similar." }
             ?: "Domain looks similar to a well-known site."
         details += ReasonDetail(Reason.NEAR_WHITELIST_LOOKALIKE, msg)
     }
@@ -487,7 +487,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         present += Reason.LONG_URL
         softContribs += Reason.LONG_URL to lenScore
         val length = canon.originalUrl.length
-        details += ReasonDetail(Reason.LONG_URL, "Very long link (**$length** characters).")
+        details += ReasonDetail(Reason.LONG_URL, "Very long link ($length characters).")
     }
 
     // Subdomain depth
@@ -496,7 +496,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         present += Reason.TOO_MANY_SUBDOMAINS
         softContribs += Reason.TOO_MANY_SUBDOMAINS to subdScore
         val count = canon.subdomain?.split('.')?.count { it.isNotEmpty() } ?: 0
-        details += ReasonDetail(Reason.TOO_MANY_SUBDOMAINS, "Unusually deep subdomain chain (**$count** levels).")
+        details += ReasonDetail(Reason.TOO_MANY_SUBDOMAINS, "Unusually deep subdomain chain ($count levels).")
     }
 
     // Phishing keywords: use info variant to get hitCount
@@ -506,7 +506,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         softContribs += Reason.PHISH_KEYWORDS to kwInfo.score
         details += ReasonDetail(
             Reason.PHISH_KEYWORDS,
-            "Contains **${kwInfo.hitCount}** words commonly used in phishing attempts."
+            "Contains ${kwInfo.hitCount} words commonly used in phishing attempts."
         )
     }
 
@@ -532,7 +532,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         add("crit=${if (hasCritical) "1" else "0"}")
         if (critTags.isNotEmpty()) add("hard[$critTags]")
         if (softTags.isNotEmpty()) add("soft[$softTags]")
-        add("reasons=${present.size} msgs=${details.size}")
+        add("reasons=${present.size} msg=${details.size}")
         add("block=$blocked")
     }.joinToString(" ")
     Log.d(TAG, msg)
