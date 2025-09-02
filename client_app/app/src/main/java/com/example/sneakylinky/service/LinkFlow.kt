@@ -63,7 +63,7 @@ object LinkFlow {
             is LinkChecker.UrlResolutionResult.Success -> res.finalUrl
             else -> {
                 rememberUrl(context, raw)
-                //HistoryStore.markLocal(context, runId, LocalCheck.ERROR, null, null)
+                HistoryStore.markLocal(context, runId, LocalCheck.ERROR, null, null)
                 UiNotices.showWarning(context, raw, "Internal error: could not verify link safely")
                 null
             }
@@ -72,7 +72,7 @@ object LinkFlow {
 
     // --- Step 2: Canonicalize ---
 
-    private fun canonicalizeOrWarn(
+    private suspend fun canonicalizeOrWarn(
         context: Context,
         runId: Long,
         url: String
@@ -80,7 +80,7 @@ object LinkFlow {
         is CanonicalParseResult.Success -> r.canonUrl
         else -> {
             rememberUrl(context, url)
-            //HistoryStore.markLocal(context, runId, LocalCheck.ERROR, url, null)
+            HistoryStore.markLocal(context, runId, LocalCheck.ERROR, url, null)
             UiNotices.showWarning(context, url, "Internal error: could not verify link safely")
             null
         }
@@ -108,24 +108,24 @@ object LinkFlow {
 
     // --- Step 4: Open in selected browser and record ---
 
-    private fun openSelectedBrowserAndMarkOpened(
+    private suspend fun openSelectedBrowserAndMarkOpened(
         context: Context,
         runId: Long,
         finalUrl: String
     ) {
         launchInSelectedBrowser(context, finalUrl)
-        //HistoryStore.markOpened(context, runId, true)
+        HistoryStore.markOpened(context, runId, true)
     }
 
     // --- Step 5: Remote scans (URL + message), run in parallel and toast once ---
 
-    private fun launchRemoteScansCombined(
+    private suspend fun launchRemoteScansCombined(
         context: Context,
         runId: Long,
         finalUrl: String,
         explicitContextText: String?
     ) {
-        //HistoryStore.markRemote(context, runId, RemoteStatus.RUNNING, null)
+        HistoryStore.markRemote(context, runId, RemoteStatus.RUNNING, null)
 
         SneakyLinkyApp.appScope.launch {
             val ctxMsg = chooseContextMessage(explicitContextText)

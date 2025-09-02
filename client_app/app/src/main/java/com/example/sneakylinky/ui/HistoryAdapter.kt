@@ -16,6 +16,7 @@ import com.example.sneakylinky.service.report.HistoryStore
 import com.example.sneakylinky.service.report.ReportDispatcher
 import com.example.sneakylinky.service.report.UserVerdict
 import kotlinx.coroutines.launch
+import androidx.core.graphics.toColorInt
 
 class HistoryAdapter(private val items: List<String>) :
     RecyclerView.Adapter<HistoryAdapter.VH>() {
@@ -57,14 +58,58 @@ class HistoryAdapter(private val items: List<String>) :
         return VH(textView)
     }
 
+    // comments in English only
     override fun onBindViewHolder(holder: VH, position: Int) {
         val url = items[position]
         holder.view.text = url
 
-        holder.view.setOnClickListener {
-            showReportDialog(holder.view, url)
+        // default color until DB result arrives
+        holder.view.setTextColor(ContextCompat.getColor(holder.view.context, R.color.near_white))
+
+        // load latest history for this URL and colorize
+        SneakyLinkyApp.appScope.launch {
+            val ctx = holder.view.context
+            val history = HistoryStore.latestForUrl(ctx, url) // suspend
+
+            // Switch back to main thread to touch views
+            (holder.view.context as? android.app.Activity)?.runOnUiThread {
+                holder.view.setTextColor(colorFor(history, ctx))
+            }
+        }
+
+        holder.view.setOnClickListener { showReportDialog(holder.view, url) }
+    }
+
+
+    // comments in English only
+    private fun colorFor(history: com.example.sneakylinky.service.report.LinkHistory?, ctx: android.content.Context): Int {
+        if (history == null) return ContextCompat.getColor(ctx, R.color.near_white)
+
+        val red    = "#FF4D4D".toColorInt()
+        val orange = "#FFA500".toColorInt()
+        val yellow = "#FFD54F".toColorInt()
+        val green  = "#4CAF50".toColorInt()
+
+        return when {
+            // Red: failed local check (suspicious or error)
+            history.localCheck == com.example.sneakylinky.service.report.LocalCheck.SUSPICIOUS ||
+                    history.localCheck == com.example.sneakylinky.service.report.LocalCheck.ERROR -> red
+
+            // Orange: remote risk (combined indicates suspicion)  ← temporary stand-in for "message fail"
+            history.remoteStatus == com.example.sneakylinky.service.report.RemoteStatus.RISK -> orange
+
+            // Yellow: remote error (server side or analysis failed)
+            history.remoteStatus == com.example.sneakylinky.service.report.RemoteStatus.ERROR -> yellow
+
+            // Green: passed all (local SAFE and remote SAFE or not yet run)
+            history.localCheck == com.example.sneakylinky.service.report.LocalCheck.SAFE &&
+                    (history.remoteStatus == com.example.sneakylinky.service.report.RemoteStatus.SAFE) -> green
+
+            else -> ContextCompat.getColor(ctx, R.color.near_white)
         }
     }
+
+
 
     override fun getItemCount() = items.size
 
