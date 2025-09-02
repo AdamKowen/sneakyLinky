@@ -19,13 +19,14 @@ import android.util.Log
 import com.example.sneakylinky.service.LinkChecker
 import com.example.sneakylinky.service.serveranalysis.UrlAnalyzer
 import com.example.sneakylinky.service.urlanalyzer.CanonUrl
-import com.example.sneakylinky.service.urlanalyzer.canonicalize
 import kotlin.math.abs
+import com.example.sneakylinky.service.urlanalyzer.toCanonUrlOrNull
 
 
-import com.example.sneakylinky.service.urlanalyzer.CanonicalParseResult
-import com.example.sneakylinky.service.urlanalyzer.isLocalSafe
 import com.example.sneakylinky.service.urlanalyzer.populateTestData
+import com.example.sneakylinky.service.urlanalyzer.DecisionSource
+import com.example.sneakylinky.service.urlanalyzer.Verdict
+import com.example.sneakylinky.service.urlanalyzer.evaluateUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -141,21 +142,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun canonicalizeOrShowError(raw: String): CanonUrl? {
-        val result = raw.canonicalize()
-        return when (result) {
-            is CanonicalParseResult.Success -> result.canonUrl
-            is CanonicalParseResult.Error   -> {
-                showWarning(raw, "Internal error: could not verify link safely")
-                null
-            }
+        val canon = raw.toCanonUrlOrNull()
+        return canon ?: run {
+            showWarning(raw, "Internal error: could not verify link safely")
+            null
         }
     }
 
 
     suspend fun isLinkSafeLocally(canon: CanonUrl) {
-        if (!canon.isLocalSafe()) {
-            showWarning(canon.originalUrl,
-                "Link found to be suspicious. Proceed with caution.")
+        val eval = evaluateUrl(canon.originalUrl)
+        if (eval.verdict != Verdict.SAFE) {
+            showWarning(
+                canon.originalUrl,
+                "Link found to be suspicious. Proceed with caution."
+            )
             return
         }
         launchInSelectedBrowser(this, canon.originalUrl)

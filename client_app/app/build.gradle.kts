@@ -86,6 +86,6 @@ dependencies {
     implementation ("androidx.cardview:cardview:1.0.0")
 
 
-
+    testImplementation("org.robolectric:robolectric:4.12.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }

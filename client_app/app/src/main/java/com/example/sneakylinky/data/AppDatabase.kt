@@ -8,15 +8,13 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [
-        CachedHostEntry::class,
         WhitelistEntry::class,
         BlacklistEntry::class
     ],
-    version = 3,
+    version = 4,            // bumped because we dropped a table
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun hostCacheDao(): HostCacheDao
     abstract fun whitelistDao(): WhitelistDao
     abstract fun blacklistDao(): BlacklistDao
 
@@ -31,6 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
+                    // Dev-friendly: will drop/recreate on version change
                     .fallbackToDestructiveMigration(true)
                     .build()
                 INSTANCE = instance

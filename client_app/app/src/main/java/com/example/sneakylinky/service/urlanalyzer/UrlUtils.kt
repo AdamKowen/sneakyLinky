@@ -1,230 +1,151 @@
+// File: app/src/main/java/com/example/sneakylinky/service/urlanalyzer/UrlUtils.kt
 package com.example.sneakylinky.service.urlanalyzer
 
 import android.util.Log
 import com.example.sneakylinky.SneakyLinkyApp
 import com.example.sneakylinky.data.AppDatabase
 import com.example.sneakylinky.data.BlacklistEntry
-import com.example.sneakylinky.data.CachedHostEntry
 import com.example.sneakylinky.data.WhitelistEntry
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 
+private const val TAG = "UrlUtils"
 
-enum class HostCheckResult {
+/* ──────────────────────────────────────────────────────────────────────────────
+   Local list status (no cache table).
+   Used to short-circuit before heuristics.
+   ──────────────────────────────────────────────────────────────────────────── */
+enum class ListCheckResult {
     WHITELISTED,
     BLACKLISTED,
-    CACHED_TRUSTED,
-    CACHED_SUSPICIOUS,
-    CACHED_BLACKLISTED,
     NOT_PRESENT
 }
 
+/* ──────────────────────────────────────────────────────────────────────────────
+   Decision envelope for the full local flow.
+   - verdict: SAFE or BLOCK
+   - source : where the decision came from
+   - reasons/score: only populated for HEURISTICS decisions (when blocked)
+   - canon  : returned for convenience to downstream consumers
+   ──────────────────────────────────────────────────────────────────────────── */
+enum class Verdict { SAFE, BLOCK }
+enum class DecisionSource { PARSE_ERROR, WHITELIST, BLACKLIST, HEURISTICS }
 
-suspend fun checkHostInLocalTables(canon: CanonUrl): HostCheckResult {
-    val host = canon.hostAscii?.lowercase() ?: return HostCheckResult.NOT_PRESENT
+data class UrlEvaluation(
+    val verdict: Verdict,
+    val source: DecisionSource,
+    val reasons: List<Reason> = emptyList(),
+    val score: Double = 0.0,
+    val canon: CanonUrl? = null
+)
 
-    // 2) Grab all three DAOs
+/* ──────────────────────────────────────────────────────────────────────────────
+   Look up host in local Room lists (whitelist/blacklist).
+   Purely local; returns a coarse status (no network).
+   ──────────────────────────────────────────────────────────────────────────── */
+suspend fun checkLocalLists(canon: CanonUrl): ListCheckResult {
+    val host = canon.hostAscii?.lowercase() ?: return ListCheckResult.NOT_PRESENT
     val db = AppDatabase.getInstance(SneakyLinkyApp.appContext())
     val whitelistDao = db.whitelistDao()
     val blacklistDao = db.blacklistDao()
-    val trustedDao = db.hostCacheDao()
 
-    if (whitelistDao.isWhitelisted(host))
-        return HostCheckResult.WHITELISTED
-
-    if (blacklistDao.isBlacklisted(host))
-        return HostCheckResult.BLACKLISTED
-
-    //    getStatus(...) returns Int? (1=trusted, 2=suspicious, 3=blacklisted), or null if not in table
-    val status = trustedDao.getStatus(host)
-    return when (status) {
-        1 -> HostCheckResult.CACHED_TRUSTED
-        2 -> HostCheckResult.CACHED_SUSPICIOUS
-        3 -> HostCheckResult.CACHED_BLACKLISTED
-        else -> HostCheckResult.NOT_PRESENT
-    }
+    if (whitelistDao.isWhitelisted(host)) return ListCheckResult.WHITELISTED
+    if (blacklistDao.isBlacklisted(host)) return ListCheckResult.BLACKLISTED
+    return ListCheckResult.NOT_PRESENT
 }
 
-suspend fun CanonUrl.checkLocalTables(): HostCheckResult {
-    return checkHostInLocalTables(this)
-}
+/* ──────────────────────────────────────────────────────────────────────────────
+   Single-entry local decision:
+   1) Parse (fail-closed → BLOCK if parse fails).
+   2) Check whitelist/blacklist.
+   3) Else run all heuristics (analyzeAndDecide).
 
-suspend fun isUrlPassStaticChecks(canon: CanonUrl): Boolean {
-    if (isSuspiciousByIp(canon)) {
-        Log.d("UrlUtils", "isStaticUrlSafe → failed IP‐literal check")
-        return false
+   Notes:
+   - We return SAFE for whitelist hits, BLOCK for blacklist.
+   - Heuristics always run all checks internally and combine.
+   - Logs are compact (≤~80 chars).
+   ──────────────────────────────────────────────────────────────────────────── */
+suspend fun evaluateUrl(raw: String): UrlEvaluation {
+    val tag = "UrlDecision"
+    val canon = raw.toCanonUrlOrNull()
+    if (canon == null) {
+        Log.d(tag, "parse: fail → block (PARSE_ERROR)")
+        return UrlEvaluation(
+            verdict = Verdict.BLOCK,
+            source = DecisionSource.PARSE_ERROR
+        )
     }
-    val isTooClose = withContext(Dispatchers.IO) {
-        isSuspiciousByNormalizedDistance(canon)
-    }
-    if (isTooClose) {
-        Log.d("UrlUtils", "isStaticUrlSafe → failed near‐whitelist check")
-        return false
-    }
 
-    // TODO : insert more static checks here as needed
-    Log.d("UrlUtils", "isStaticUrlSafe → all checks passed")
-    return true
-}
-
-suspend fun CanonUrl.passesStaticChecks(): Boolean {
-    return isUrlPassStaticChecks(this)
-}
-
-suspend fun isUrlLocalSafe(canon: CanonUrl): Boolean {
-    // 1) Look up in local tables
-    when (checkHostInLocalTables(canon)) {
-        HostCheckResult.WHITELISTED,
-        HostCheckResult.CACHED_TRUSTED -> {
-            return true
+    when (checkLocalLists(canon)) {
+        ListCheckResult.WHITELISTED -> {
+            Log.d(tag, "lists: whitelist → safe")
+            return UrlEvaluation(
+                verdict = Verdict.SAFE,
+                source = DecisionSource.WHITELIST,
+                canon = canon
+            )
         }
-
-        HostCheckResult.BLACKLISTED,
-        HostCheckResult.CACHED_SUSPICIOUS,
-        HostCheckResult.CACHED_BLACKLISTED -> {
-            return false
+        ListCheckResult.BLACKLISTED -> {
+            Log.d(tag, "lists: blacklist → block")
+            return UrlEvaluation(
+                verdict = Verdict.BLOCK,
+                source = DecisionSource.BLACKLIST,
+                canon = canon
+            )
         }
-
-        HostCheckResult.NOT_PRESENT -> {
-            // deliberately empty - allows to fall through to static checks
+        ListCheckResult.NOT_PRESENT -> {
+            // fall through to heuristics
         }
     }
 
-    // 2) Not in any table → run static checks
-    return isUrlPassStaticChecks(canon)
+    val h = analyzeAndDecide(canon)
+    if (h.blocked) {
+        Log.d(tag, "heur: block soft=${"%.2f".format(h.totalScore)} reasons=${h.reasons}")
+    } else {
+        Log.d(tag, "heur: safe soft=${"%.2f".format(h.totalScore)}")
+    }
+    return UrlEvaluation(
+        verdict = if (h.blocked) Verdict.BLOCK else Verdict.SAFE,
+        source = DecisionSource.HEURISTICS,
+        reasons = if (h.blocked) h.reasons else emptyList(),
+        score = h.totalScore,
+        canon = canon
+    )
 }
 
-suspend fun CanonUrl.isLocalSafe(): Boolean {
-    return isUrlLocalSafe(this)
-}
-
-// TODO : remove this function in production
+/* ──────────────────────────────────────────────────────────────────────────────
+   Dev helper to seed local lists for manual testing.
+   DO NOT ship in production builds.
+   ──────────────────────────────────────────────────────────────────────────── */
 fun populateTestData() {
     runBlocking {
         val db = AppDatabase.getInstance(SneakyLinkyApp.appContext())
         val wlDao = db.whitelistDao()
         val blDao = db.blacklistDao()
-        val tDao = db.hostCacheDao()
 
         // Clear any existing data (so you can re-run without duplicates)
         wlDao.clearAll()
         blDao.clearAll()
-        tDao.deleteOlderThan(System.currentTimeMillis() + 1)
 
-        // 1) Insert a whitelist host
+        // Seed a (truncated) whitelist. Expand as you like.
         val entries = listOf(
-            "adobe.com",
-            "aliexpress.com",
-            "amazon.co.jp",
-            "amazon.co.uk",
-            "amazon.com",
-            "amazon.de",
-            "amazon.in",
-            "apple.com",
-            "baidu.com",
-            "bbc.co.uk",
-            "bbc.com",
-            "bet.br",
-            "bilibili.com",
-            "bing.com",
-            "booking.com",
-            "canva.com",
-            "chatgpt.com",
-            "clevelandclinic.org",
-            "cnn.com",
-            "cricbuzz.com",
-            "dailymotion.com",
-            "detik.com",
-            "discord.com",
-            "duckduckgo.com",
-            "dzen.ru",
-            "ebay.com",
-            "espn.com",
-            "espncricinfo.com",
-            "facebook.com",
-            "fandom.com",
-            "github.com",
-            "globo.com",
-            "google.co.uk",
-            "google.com",
-            "google.com.br",
-            "hindustantimes.com",
-            "ilovepdf.com",
-            "imdb.com",
-            "indeed.com",
-            "instagram.com",
-            "iplt20.com",
-            "linkedin.com",
-            "live.com",
-            "mail.ru",
-            "mayoclinic.org",
-            "microsoft.com",
-            "microsoftonline.com",
-            "msn.com",
-            "naver.com",
-            "netflix.com",
-            "news.yahoo.co.jp",
-            "nytimes.com",
-            "office.com",
-            "openai.com",
-            "paypal.com",
-            "pinterest.com",
-            "pornhub.com",
-            "quora.com",
-            "rakuten.co.jp",
-            "reddit.com",
-            "roblox.com",
-            "samsung.com",
-            "sharepoint.com",
-            "spotify.com",
-            "stripchat.com",
-            "t.me",
-            "telegram.org",
-            "temu.com",
-            "tiktok.com",
-            "twitch.tv",
-            "twitter.com",
-            "uol.com.br",
-            "usps.com",
-            "vk.com",
-            "walmart.com",
-            "weather.com",
-            "whatsapp.com",
-            "wikipedia.org",
-            "x.com",
-            "xhamster.com",
-            "xnxx.com",
-            "xvideos.com",
-            "yahoo.co.jp",
-            "yahoo.com",
-            "yandex.ru",
-            "youtube.com",
-            "zoom.us",
-            "m.facebook.com"
+            "adobe.com","aliexpress.com","amazon.co.jp","amazon.co.uk","amazon.com",
+            "amazon.de","amazon.in","apple.com","baidu.com","bbc.co.uk","bbc.com",
+            "bilibili.com","bing.com","booking.com","canva.com","chatgpt.com",
+            "clevelandclinic.org","cnn.com","discord.com","duckduckgo.com",
+            "ebay.com","espn.com","facebook.com","github.com","google.com",
+            "google.co.uk","imdb.com","instagram.com","linkedin.com","live.com",
+            "microsoft.com","microsoftonline.com","netflix.com","nytimes.com",
+            "office.com","openai.com","paypal.com","pinterest.com","reddit.com",
+            "spotify.com","telegram.org","tiktok.com","twitch.tv","twitter.com",
+            "walmart.com","whatsapp.com","wikipedia.org","x.com","yandex.ru",
+            "youtube.com","zoom.us","m.facebook.com"
         ).map { WhitelistEntry(it) }
         wlDao.insertAll(entries)
 
-        // 2) Insert a blacklist host
+        // Blacklist samples
         blDao.insert(BlacklistEntry("bad.com"))
         blDao.insert(BlacklistEntry("phishing.org"))
 
-        // 3) Insert one “trusted” and one “suspicious” host
-        val now = System.currentTimeMillis()
-        tDao.upsert(CachedHostEntry("trusted.example", now, status = 1))      // status=1 => trusted
-        tDao.upsert(
-            CachedHostEntry(
-                "suspicious.example",
-                now,
-                status = 2
-            )
-        )   // status=2 => suspicious
-        tDao.upsert(
-            CachedHostEntry(
-                "phishing.com",
-                now,
-                status = 3
-            )
-        )         // status=3 => phishing/blacklisted
+        Log.d(TAG, "populateTestData: seeded whitelist/blacklist")
     }
 }
