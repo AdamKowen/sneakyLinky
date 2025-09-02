@@ -109,6 +109,18 @@ async function searchBySubstringRepo(q) {
 }
 
 
+async function getLatestHotset(filter, limit) {
+  const result = await Domain.findAll({
+    attributes: ['name'],
+    where: filter,
+    order: [['access_count', 'DESC']],
+    limit
+  });
+
+  return result.map(record => record.name);
+}
+
+
 
 
 module.exports = {
@@ -119,5 +131,6 @@ module.exports = {
     findFirstNRepo,
     countDomains,
     countSuspiciousDomains,
-    searchBySubstringRepo
+    searchBySubstringRepo,
+    getLatestHotset
 };

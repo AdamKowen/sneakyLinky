@@ -20,7 +20,6 @@ export function ToastProvider({ children }) {
 
     timerRef.current = setTimeout(() => {
       setToast(prev => prev ? { ...prev, isVisible: false } : null);
-      // הוסף דיליי קטן לאחר האנימציה
       setTimeout(() => {
         setToast(null);
         timerRef.current = null;

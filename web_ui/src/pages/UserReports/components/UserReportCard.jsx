@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { updateAdminDecision } from '../../../services/userReports';
-import { updateDomainSuspicious /*, createDomain */ } from '../../../services/domain'; // TODO: Enable when you also want to update the domains table
-
+import { updateDomainSuspicious /*, createDomain */ } from '../../../services/domain'; 
 export default function UserReportCard({ report, onUpdate }) {
   const [adminDecision, setAdminDecision] = useState(
     report.adminDecision !== null && report.adminDecision !== undefined 
@@ -21,7 +20,7 @@ export default function UserReportCard({ report, onUpdate }) {
       await updateAdminDecision(report.id, decisionValue);
       console.log(`Admin decision for report ${report.id}: ${decisionValue}`);
       
-      // TODO: Domain table update (disabled for now).
+      // Update domain suspicious flag based on admin decision
       try {
         const hostname = new URL(report.url).hostname;
         // await createDomain({ name: hostname, suspicious: decisionValue === 1 });

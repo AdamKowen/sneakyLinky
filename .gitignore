@@ -71,3 +71,5 @@ openai_proxy/src/re.js
 openai_proxy/src/load_domains.js
 openai_proxy/package-lock.json
 
+openai_proxy/src/delete_recent_domains.js
+openai_proxy/src/delete_suspicious_domains.js
