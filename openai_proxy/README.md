@@ -1,216 +1,161 @@
-# OpenAI Proxy Server
+# App Server
 
-A secure Node.js Express server that acts as a proxy for OpenAI API requests. This project keeps your OpenAI API key safe on the server side, while providing endpoints for analyzing URLs and messages for phishing risk using OpenAI's models and local DB.
-
----
+A Node.js Express server that providing phishing detection services for URLs and messages.
 
 ## Features
-- **Secure API Key Handling:** The OpenAI API key is stored in a `.env` file and never exposed to the client.
-- **Phishing Risk Analysis:** Analyze URLs and messages for phishing risk using `/v1/analyze-url` and `/v1/analyze-message` endpoints.
-- **Health Check:** Simple `/health` endpoint for monitoring server status.
-- **Modular Code:** All routes, services, repositories, models, middleware, and utilities are separated for easy maintenance and extension.
-- **JSDoc Documentation:** All code is documented for clarity and maintainability.
-- **Comprehensive Testing:** Unit and integration tests for all major components, with coverage reports.
-- **Docker & Cloud Ready:** Includes Dockerfile, .dockerignore, and app.yaml for Google Cloud Run deployment.
 
----
-
-## Getting Started
-
-### 1. Clone the Repository
-```powershell
-# Clone this repository
-git clone <your-repo-url>
-cd openai_proxy
-```
-
-### 2. Install Dependencies
-```powershell
-npm install
-```
-
-### 3. Configure Environment Variables
-Create a `.env` file in the project root with the following content:
-```env
-OPENAI_API_KEY=your_openai_api_key_here
-PORT=3000
-DATABASE_URL=your_postgres_url_here
-```
-Replace `your_openai_api_key_here` and `your_postgres_url_here` with your actual keys.
-
-### 4. Start the Server
-```powershell
-node src/index.js
-```
-You should see:
-```
-Server running on port 3000
-```
-
----
+- **URL Analysis**: Analyze URLs for phishing risks using OpenAI's models
+- **Message Analysis**: Analyze full messages (email, SMS) for phishing content
+- **Domain Management**: CRUD operations for domain whitelists/blacklists
+- **User Reports System**: Collect and manage user-reported suspicious URLs
+- **External Integrations**: Google Safe Browsing API integration
+- **Admin Authentication**: JWT-based authentication for admin operations
+- **Scheduled Tasks**: Weekly hotset updates for domain lists
+- **Database**: SQLite with Sequelize ORM
+- **Logging**: Comprehensive logging with Winston
+- **Testing**: test suite with Jest
 
 ## API Endpoints
 
-### Health Check
-- **GET** `/health`
-- **Response:** `{ "status": "OK" }`
+### URL Analysis
+```
+POST /v1/analyze-url
+Content-Type: application/json
 
-### 1. Analyze URL
-**POST** `/v1/analyze-url`
-
-Analyze a URL for phishing risk using local DB, external DB (future), and OpenAI.
-
-**Request Body:**
-```json
 {
   "url": "https://example.com"
 }
 ```
+Analyzes a URL for phishing risks using OpenAI and returns a detailed assessment.
 
-**Response:**
-```json
+### Message Analysis
+```
+POST /v1/analyze-message
+Content-Type: application/json
+
 {
-  "phishing_score": 0.85,
-  "suspicion_reasons": ["Known suspicious domain"],
-  "recommended_actions": ["Do not click"],
-  "source": "local-db | openai | external-db"
+  "message": "Click here to claim your prize: http://suspicious-site.com"
 }
 ```
+Analyzes full message content for phishing indicators.
 
-**Errors:**
-- `400 Bad Request` if url is missing or invalid
-- `500 Internal Server Error` for unexpected errors
-
-### 2. Analyze Message
-**POST** `/v1/analyze-message`
-
-Analyze a full message (text) for phishing risk using OpenAI and DBs.
-
-**Request Body:**
-```json
-{
-  "message": "You won a prize! Click here: http://phish.com"
-}
+### Domain Management
+```
+GET /v1/domain/stats           # Get domain statistics
+GET /v1/domain/:name           # Search domain by name
+POST /v1/domain                # Create new domain entry
+PATCH /v1/domain/:name         # Update domain suspicious flag
+DELETE /v1/domain/:name        # Delete domain
+GET /v1/domain?limit=N         # Get domains with limit
 ```
 
-**Response:**
-```json
-{
-  "phishing_score": 0.92,
-  "suspicion_reasons": ["Suspicious link", "Urgency"],
-  "recommended_actions": ["Ignore message"],
-  "source": "openai"
-}
+### User Reports
+```
+GET /v1/userReports/stats                    # Get reports statistics
+GET /v1/userReports?limit=N                  # Get top unreviewed reports
+GET /v1/userReports/:id                      # Get specific report
+POST /v1/userReports                         # Create new report
+PATCH /v1/userReports/:id/adminDecision      # Update admin decision
+DELETE /v1/userReports                       # Delete reports by IDs
 ```
 
-**Errors:**
-- `400 Bad Request` if message is missing or too long
-- `400 Bad Request` for invalid JSON
-- `500 Internal Server Error` for unexpected errors
-
----
-
-## Example cURL Requests
-
-**Health Check:**
-```powershell
-curl http://localhost:3000/health
+### Authentication
 ```
+POST /v1/auth/login           # Admin login
+```
+
+## Example Usage
 
 **Analyze URL:**
-```powershell
+```bash
 curl -X POST http://localhost:3000/v1/analyze-url \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com"}'
 ```
 
 **Analyze Message:**
-```powershell
+```bash
 curl -X POST http://localhost:3000/v1/analyze-message \
   -H "Content-Type: application/json" \
   -d '{"message": "You won a prize! Click here: http://phish.com"}'
 ```
 
----
 
 ## Project Structure
+
 ```
-openai_proxy/
-├── Dockerfile
-├── .dockerignore
-├── app.yaml
-├── package.json
-├── .env
-├── README.md
-├── coverage/
-│   └── ...
-├── logs/
-│   └── dev.log
-├── src/
-│   ├── index.js
-│   ├── config/
-│   │   └── db.js
-│   ├── middleware/
-│   │   └── openai/
-│   │       ├── openaiClient.js
-│   │       └── prompt.js
-│   ├── models/
-│   │   └── Domain.js
-│   ├── repositories/
-│   │   └── domainRepository.js
-│   ├── routes/
-│   │   └── v1/
-│   │       ├── analyzeUrlRoutes.js
-│   │       └── analyzeMessageRoutes.js
-│   ├── services/
-│   │   └── domainService.js
-│   └── utils/
-│       ├── logger.js
-│       └── parseDomain.js
-├── tests/
-│   ├── analyzeUrlRoutes.test.js
-│   ├── analyzeMessageRoutes.test.js
-│   ├── domainRepository.test.js
-│   ├── domainService.test.js
-│   ├── Domain.test.js
-│   └── parseDomain.test.js
-└── prompt.js
+src/
+├── config/
+│   └── db.js                    # Database configuration
+├── middleware/
+│   ├── openai/
+│   │   ├── openaiClient.js      # OpenAI API integration
+│   │   └── prompt.js            # Analysis prompts
+│   └── externalDB/
+│       └── gsbClient.js         # Google Safe Browsing
+├── models/
+│   ├── Admin.js                 # Admin user model
+│   ├── Domain.js                # Domain model
+│   ├── DomainHotset.js         # Domain hotset model
+│   └── UserReports.js          # User reports model
+├── repositories/
+│   ├── adminRepository.js       # Admin data layer
+│   ├── domainRepository.js      # Domain data layer
+│   ├── domainHotsetRepository.js
+│   └── userReportsRepository.js
+├── routes/
+│   └── v1/
+│       ├── analysis/
+│       │   ├── analyzeUrlRoutes.js
+│       │   └── analyzeMessageRoutes.js
+│       ├── auth/
+│       │   └── authRoutes.js
+│       ├── domain/
+│       │   └── domainRoutes.js
+│       └── userReports/
+│           └── userReportsRoutes.js
+├── services/
+│   ├── adminService.js          # Admin business logic
+│   ├── domainService.js         # Domain business logic
+│   ├── domainHotsetService.js   # Hotset management
+│   └── userReportsService.js    # Reports business logic
+├── utils/
+│   ├── logger.js                # Winston logger setup
+│   └── parseDomain.js           # Domain parsing utilities
+├── HotsetScheduler.js           # Weekly scheduled tasks
+└── index.js                     # Main application entry point
 ```
 
----
 
-## Security Notes
-- **Never expose your OpenAI API key to the client or commit it to version control.**
-- All sensitive logic and API keys remain on the server side.
+## Database Models
 
----
+### Domain
+- `name`: Domain name (unique)
+- `suspicious`: Boolean flag for suspicious domains
+- `access_count`: Counts how many times this domain was fetched
+- `createdAt/updatedAt`: Timestamps
 
-## Docker & Cloud Deployment
-- Build and run with Docker:
-  ```powershell
-  docker build -t openai-proxy .
-  docker run --env-file .env -p 3000:3000 openai-proxy
-  ```
-- Deploy to Google Cloud Run using `app.yaml` and Google Cloud CLI.
+### UserReports
+- `url`: Reported URL
+- `systemClassification`: AI classification (0=safe, 1=phishing)
+- `userClassification`: User classification (0=safe, 1=phishing)
+- `userReason`: User's reason for reporting
+- `adminDecision`: Admin review decision (0=safe, 1=phishing)
+- `reportCount`: Number of times reported
 
----
+### Admin
+- `email`: Admin email (unique)
+- `password`: Hashed password
+- `createdAt/updatedAt`: Timestamps
 
 ## Testing
-- Run all tests:
-  ```powershell
-  npm test
-  ```
-- Run with coverage:
-  ```powershell
-  npm run test:coverage
-  ```
 
----
+Run the test suite:
+```bash
+npm test
+```
 
-## License
-This project is provided as-is for educational and demonstration purposes.
-
----
-
-## Author
-Created by sneakyLinky
+Run tests with coverage:
+```bash
+npm run test:coverage
+```
