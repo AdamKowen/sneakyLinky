@@ -215,8 +215,8 @@ object LinkFlow {
                         append("URL: ")
                         append(
                             when {
-                                urlOk && urlRisk -> "⚠️ suspicious (" + fmt(urlScore) + ")"
-                                urlOk            -> "✅ safe (" + fmt(urlScore) + ")"
+                                urlOk && urlRisk -> "⚠️ suspicious "
+                                urlOk            -> "✅ safe"
                                 urlErr           -> "❌ error"
                                 else             -> "❌ error"
                             }
@@ -225,8 +225,8 @@ object LinkFlow {
                             append(" • Message: ")
                             append(
                                 when {
-                                    msgOk && msgRisk -> "⚠️ suspicious (" + fmt(msgScore) + ")"
-                                    msgOk            -> "✅ safe (" + fmt(msgScore) + ")"
+                                    msgOk && msgRisk -> "⚠️ suspicious"
+                                    msgOk            -> "✅ safe"
                                     msgErr           -> "❌ error"
                                     else             -> "skipped"
                                 }
