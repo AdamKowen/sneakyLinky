@@ -27,7 +27,6 @@ fun launchInSelectedBrowser(context: Context, url: String) {
         selectedPackage?.let { setPackage(it) }
     }
 
-    Toast.makeText(context, "Sneaky checking link", Toast.LENGTH_SHORT).show()
 
     try {
         context.startActivity(intent)

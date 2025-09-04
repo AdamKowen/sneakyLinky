@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Translucent rounded card, like your programmatic style (#20FFFFFF) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="12dp"/>
+    <solid android:color="#20FFFFFF"/>
+</shape>

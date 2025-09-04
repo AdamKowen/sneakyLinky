@@ -1,10 +1,13 @@
 package com.example.sneakylinky.service
 
+import android.content.ContentValues.TAG
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
+import javax.net.ssl.SSLHandshakeException
+import javax.net.ssl.SSLPeerUnverifiedException
 
 /**
  * `LinkChecker` is a utility object used to inspect URLs **without automatically following redirects**.
@@ -141,7 +144,18 @@ object LinkChecker {
                     }
                 }
             } catch (e: IOException) {
-                // comments in English only
+
+                //allow SSL hostname mismatch to pass-through ---
+                if (isHostnameMismatch(e)) {
+                    android.util.Log.w(TAG, "SSL hostname mismatch for $current — allowing resolve to pass-through", e)
+                    return UrlResolutionResult.Success(
+                        originalUrl = sanitized,
+                        finalUrl = current.toString(),
+                        redirectCount = hops,
+                        finalStatusCode = 0
+                    )
+                }
+
                 val isCleartextBlocked =
                     (e is java.net.UnknownServiceException) &&
                             (e.message?.contains("CLEARTEXT", ignoreCase = true) == true)
@@ -155,31 +169,32 @@ object LinkChecker {
                     if (httpsUrl != null) {
                         sanitized = sanitized.replaceFirst(Regex("^http://", RegexOption.IGNORE_CASE), "https://")
                         current = httpsUrl
-                        // retry same hop over HTTPS (do NOT increment hops)
-                        continue
+                        continue // retry same hop over HTTPS
                     }
-                    // fall through to Failure if httpsUrl is null
                 }
 
                 return UrlResolutionResult.Failure(
-                    sanitized,
-                    UrlResolutionResult.ErrorCause.NETWORK_EXCEPTION,
-                    hops
+                    sanitized, UrlResolutionResult.ErrorCause.NETWORK_EXCEPTION, hops
                 )
+
             } catch (e: Exception) {
                 return UrlResolutionResult.Failure(
-                    sanitized,
-                    UrlResolutionResult.ErrorCause.UNKNOWN,
-                    hops
+                    sanitized, UrlResolutionResult.ErrorCause.UNKNOWN, hops
                 )
             }
         }
 
         return UrlResolutionResult.Failure(
-            sanitized,
-            UrlResolutionResult.ErrorCause.EXCEEDED_REDIRECT_LIMIT,
-            hops
+            sanitized, UrlResolutionResult.ErrorCause.EXCEEDED_REDIRECT_LIMIT, hops
         )
+    }
+
+    // Helper to detect hostname mismatch across OkHttp/JDK variants
+    private fun isHostnameMismatch(e: Throwable): Boolean {
+        if (e is SSLPeerUnverifiedException) return true
+        if (e is SSLHandshakeException && e.cause is SSLPeerUnverifiedException) return true
+        val msg = e.message?.lowercase().orEmpty()
+        return msg.contains("hostname") && (msg.contains("not verified") || msg.contains("mismatch"))
     }
 
 
