@@ -23,6 +23,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
+import com.example.sneakylinky.ui.flow.FeatureFlags
+
 
 object LinkFlow {
 
@@ -43,6 +45,9 @@ object LinkFlow {
 
     // Single entry-point used by both activities
     suspend fun runLinkFlow(context: Context, raw: String, contextText: String? = null) {
+
+        val doUrl = FeatureFlags.remoteLinkChecks(context)
+        val doMsg = FeatureFlags.remoteMessageChecks(context)
 
         Log.d(TAG, "\nrun start raw=${raw.take(120)}")
         val runId = HistoryStore.createRun(context, raw, contextText)
@@ -77,9 +82,18 @@ object LinkFlow {
             openSelectedBrowserAndMarkOpened(context, runId, finalUrl)
             Log.d(TAG, "opened in browser & marked opened")
 
-            // Kick off remote scans (URL + message context) and show a single summary toast
-            Log.d(TAG, "launch remote scans (parallel)")
-            launchRemoteScansCombined(context, runId, finalUrl, contextText)
+
+
+            // Per your rule: if both are true → skip remote scans entirely
+            if (doUrl || doMsg) {
+                Log.d(TAG, "launch remote scans (parallel)")
+                launchRemoteScansCombined(context, runId, finalUrl, contextText)
+            } else {
+                Log.d(TAG, "Both toggles OFF → mark remote as SAFE (local-only) to avoid 'no data'")
+                HistoryStore.markRemote(context, runId, RemoteStatus.SAFE, null)
+                remoteBreakdowns[runId] = RemoteBreakdown.NONE
+            }
+
         }
         Log.d(TAG, "run end")
     }
@@ -167,32 +181,44 @@ object LinkFlow {
 
         SneakyLinkyApp.appScope.launch {
             val ctxMsg = chooseContextMessage(explicitContextText)
+
+
+            // Check toggles for which remote checks to run
+            val doUrl = FeatureFlags.remoteLinkChecks(context)
+            val doMsg = FeatureFlags.remoteMessageChecks(context) && (ctxMsg != null)
+
+
             fun fmt(s: Float?): String = s?.let { String.format("%.2f", it) } ?: "n/a"
 
             try {
                 coroutineScope {
-                    val urlDef = async(Dispatchers.IO) { runCatching { UrlAnalyzer.analyze(finalUrl) } }
-                    val msgDef = async(Dispatchers.IO) {
-                        if (ctxMsg != null) runCatching { MessageAnalyzer.analyze(ctxMsg) } else null
-                    }
 
-                    val urlRes  = urlDef.await()
-                    val msgRes  = msgDef.await()
+                    val urlDef = if (doUrl)
+                        async(Dispatchers.IO) { runCatching { UrlAnalyzer.analyze(finalUrl) } }
+                    else null
+
+
+                    val msgDef = if (doMsg)
+                        async(Dispatchers.IO) { runCatching { MessageAnalyzer.analyze(ctxMsg!!) } }
+                    else null
+
+                    val urlRes  = urlDef?.await()
+                    val msgRes  = msgDef?.await()
                     val hasMsg  = ctxMsg != null
 
-                    val urlOk    = urlRes.isSuccess
-                    val urlErr   = urlRes.isFailure
-                    val urlScore = urlRes.getOrNull()?.phishingScore
+                    val urlOk    = urlRes?.isSuccess == true
+                    val urlErr   = urlRes?.isFailure == true
+                    val urlScore = urlRes?.getOrNull()?.phishingScore
                     val urlRisk  = (urlScore ?: 0f) >= 0.5f
 
-                    val msgOk    = hasMsg && (msgRes?.isSuccess == true)
-                    val msgErr   = hasMsg && (msgRes?.isFailure == true)
-                    val msgScore = if (hasMsg) msgRes?.getOrNull()?.phishingScore else null
+                    val msgOk    = msgRes?.isSuccess == true
+                    val msgErr   = msgRes?.isFailure == true
+                    val msgScore = msgRes?.getOrNull()?.phishingScore
                     val msgRisk  = (msgScore ?: 0f) >= 0.5f
 
-                    // --- NEW: simple breakdown (risk OR error counts as "fail") ---
-                    val urlFail = (urlOk && urlRisk) || urlErr
-                    val msgFail = hasMsg && ((msgOk && msgRisk) || msgErr)
+                    // Fail = (ran and got risk) OR (ran and got error). If not run → not a fail.
+                    val urlFail = doUrl && ((urlOk && urlRisk) || urlErr)
+                    val msgFail = doMsg && ((msgOk && msgRisk) || msgErr)
 
                     val breakdown = when {
                         urlFail && msgFail -> RemoteBreakdown.BOTH_FAIL
@@ -201,37 +227,38 @@ object LinkFlow {
                         else               -> RemoteBreakdown.NONE
                     }
                     remoteBreakdowns[runId] = breakdown
-                    // --------------------------------------------------------------
 
                     val combinedScore  = listOfNotNull(urlScore, msgScore).maxOrNull()
                     val combinedStatus = when {
                         (urlOk && urlRisk) || (msgOk && msgRisk) -> RemoteStatus.RISK
-                        (urlOk || msgOk) && !(urlRisk || msgRisk) -> RemoteStatus.SAFE
+                        (listOf(urlRes, msgRes).any { it?.isSuccess == true }) &&
+                                !(urlRisk || msgRisk) -> RemoteStatus.SAFE
                         else -> RemoteStatus.ERROR
                     }
                     HistoryStore.markRemote(context, runId, combinedStatus, combinedScore)
+
 
                     val toastText = buildString {
                         append("URL: ")
                         append(
                             when {
-                                urlOk && urlRisk -> "⚠️ suspicious "
+                                !doUrl          -> "skipped"
+                                urlOk && urlRisk -> "⚠️ suspicious"
                                 urlOk            -> "✅ safe"
                                 urlErr           -> "❌ error"
                                 else             -> "❌ error"
                             }
                         )
-                        if (hasMsg) {
-                            append(" • Message: ")
-                            append(
-                                when {
-                                    msgOk && msgRisk -> "⚠️ suspicious"
-                                    msgOk            -> "✅ safe"
-                                    msgErr           -> "❌ error"
-                                    else             -> "skipped"
-                                }
-                            )
-                        }
+                        append(" • Message: ")
+                        append(
+                            when {
+                                !doMsg          -> "skipped"
+                                msgOk && msgRisk -> "⚠️ suspicious"
+                                msgOk            -> "✅ safe"
+                                msgErr           -> "❌ error"
+                                else             -> "❌ error"
+                            }
+                        )
                     }
 
                     UiNotices.safeToast(context, toastText)
