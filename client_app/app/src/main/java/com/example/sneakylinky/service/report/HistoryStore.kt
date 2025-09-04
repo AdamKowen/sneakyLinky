@@ -4,6 +4,7 @@ package com.example.sneakylinky.service.report
 import android.content.Context
 import com.example.sneakylinky.data.AppDatabase
 import com.example.sneakylinky.data.LinkHistoryDao
+import kotlinx.coroutines.flow.Flow
 
 object HistoryStore {
     private fun dao(ctx: Context): LinkHistoryDao =
@@ -37,4 +38,16 @@ object HistoryStore {
     // ✅ now resolves
     suspend fun latestForUrl(ctx: Context, url: String) = dao(ctx).latestForUrl(url)
     suspend fun recentDistinct(ctx: Context, limit: Int = 200) = dao(ctx).recentDistinct(limit)
+
+
+    // expose Flow from DAO (already implemented in DAO)
+    fun recentStream(ctx: Context, limit: Int = 200): Flow<List<LinkHistory>> =
+        dao(ctx).recentStream(limit)
+
+    // optional one-shot fetch if you want manual refresh calls
+    suspend fun recent(ctx: Context, limit: Int = 200): List<LinkHistory> =
+        dao(ctx).recent(limit)
+
+
+
 }

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- comments in English only -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -30,12 +31,21 @@
             android:padding="24dp"
             android:gravity="center" />
 
+        <!-- New CheckBox -->
+        <CheckBox
+            android:id="@+id/checkboxRisks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="I understand the risks"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="16dp"
+            android:buttonTint="@android:color/white"/>
 
         <Button
             android:id="@+id/proceedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Proceed to Website" />
+            android:text="Proceed to Website" /> <!-- disabled by default -->
 
         <Button
             android:id="@+id/closeButton"
