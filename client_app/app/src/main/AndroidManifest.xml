@@ -54,7 +54,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.LinkWarningActivity" />
+        <activity android:name=".ui.LinkWarningActivity"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true" />
         <service
             android:name=".service.MyAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"

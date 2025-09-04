@@ -21,6 +21,16 @@ class BrowserCarouselAdapter(
 
     private var selectedPackageName: String? = getSelectedBrowser(context)
 
+    // Ensure a default is selected on first app start
+    init {
+        // comments in English only
+        if (selectedPackageName.isNullOrBlank() && browsers.isNotEmpty()) {
+            val firstPkg = browsers.first().activityInfo.packageName
+            saveSelectedBrowser(context, firstPkg)   // persist default
+            selectedPackageName = firstPkg           // reflect in UI
+        }
+    }
+
     inner class VH(item: View) : RecyclerView.ViewHolder(item) {
         val icon: ImageView = item.findViewById(R.id.browserIcon)
         val label: TextView = item.findViewById(R.id.browserLabel)
