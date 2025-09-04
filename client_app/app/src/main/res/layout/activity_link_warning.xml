@@ -45,8 +45,7 @@
             android:id="@+id/proceedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Proceed to Website"
-            android:enabled="false" /> <!-- disabled by default -->
+            android:text="Proceed to Website" /> <!-- disabled by default -->
 
         <Button
             android:id="@+id/closeButton"

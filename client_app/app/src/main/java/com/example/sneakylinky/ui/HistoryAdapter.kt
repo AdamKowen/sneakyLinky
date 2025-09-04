@@ -1,6 +1,7 @@
 // comments in English only
 package com.example.sneakylinky.ui
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.text.InputType
@@ -20,22 +21,36 @@ import androidx.core.view.setPadding
 import androidx.recyclerview.widget.RecyclerView
 import com.example.sneakylinky.R
 import com.example.sneakylinky.SneakyLinkyApp
+import com.example.sneakylinky.service.LinkFlow
 import com.example.sneakylinky.service.report.HistoryStore
 import com.example.sneakylinky.service.report.LinkHistory
 import com.example.sneakylinky.service.report.LocalCheck
 import com.example.sneakylinky.service.report.RemoteStatus
 import com.example.sneakylinky.service.report.ReportDispatcher
+import com.example.sneakylinky.service.report.ReportSendState
 import com.example.sneakylinky.service.report.UserVerdict
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HistoryAdapter(
     private val context: Context,
-    private val items: List<LinkHistory>
+    private val initialItems: List<LinkHistory>
 ) : RecyclerView.Adapter<HistoryAdapter.VH>() {
 
     inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val urlView: TextView = itemView.findViewById(R.id.tvUrl)
         val statusIcon: ImageView = itemView.findViewById(R.id.ivStatus)
+    }
+
+    private val items: MutableList<LinkHistory> = initialItems.toMutableList()
+
+
+    // Public setter to refresh the list from DB/Flow
+    @SuppressLint("NotifyDataSetChanged")
+    fun setData(newItems: List<LinkHistory>) {
+        items.clear()
+        items.addAll(newItems)
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -146,6 +161,14 @@ class HistoryAdapter(
                         }
                         Toast.makeText(ctx.applicationContext, msg, Toast.LENGTH_SHORT).show()
                     }
+
+
+                    val fresh = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        com.example.sneakylinky.service.report.HistoryStore.recent(ctx, 200)
+                    }
+                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        this@HistoryAdapter.setData(fresh)
+                    }
                 }
             }
             .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
@@ -164,23 +187,75 @@ class HistoryAdapter(
     override fun getItemCount() = items.size
 
     // Map DB state to icon + description + tint
-    private fun iconFor(history: LinkHistory): Triple<Int, Int, String> {
-        // NOTE: using R.drawable.link as placeholder for all; swap to your icons later
-        return when {
-            history.localCheck == LocalCheck.SUSPICIOUS || history.localCheck == LocalCheck.ERROR ->
+    // comments in English only
+    private fun iconFor(history: com.example.sneakylinky.service.report.LinkHistory): Triple<Int, Int, String> {
+        // if you use the breakdown map:
+        val breakdown = com.example.sneakylinky.service.LinkFlow.remoteBreakdownFor(history.id)
+
+        // 1) compute base first (icon/tint/label by status)
+        val base: Triple<Int, Int, String> = when {
+            history.localCheck == com.example.sneakylinky.service.report.LocalCheck.SUSPICIOUS ||
+                    history.localCheck == com.example.sneakylinky.service.report.LocalCheck.ERROR ->
                 Triple(R.drawable.x, android.R.color.holo_red_light, "Failed local check")
 
-            history.remoteStatus == RemoteStatus.RISK ->
+            breakdown == com.example.sneakylinky.service.LinkFlow.RemoteBreakdown.BOTH_FAIL ->
+                Triple(R.drawable.warning, android.R.color.holo_orange_light, "Both remote checks failed")
+
+            breakdown == com.example.sneakylinky.service.LinkFlow.RemoteBreakdown.URL_FAIL ->
+                Triple(R.drawable.link, android.R.color.holo_orange_light, "URL check failed")
+
+            breakdown == com.example.sneakylinky.service.LinkFlow.RemoteBreakdown.MESSAGE_FAIL ->
+                Triple(R.drawable.message, android.R.color.holo_orange_light, "Message check failed")
+
+            history.localCheck == com.example.sneakylinky.service.report.LocalCheck.SAFE &&
+                    history.remoteStatus == com.example.sneakylinky.service.report.RemoteStatus.SAFE ->
+                Triple(R.drawable.check, android.R.color.holo_green_light, "All checks passed")
+
+            history.remoteStatus == com.example.sneakylinky.service.report.RemoteStatus.RISK ->
                 Triple(R.drawable.warning, android.R.color.holo_orange_light, "Remote risk detected")
 
-            history.remoteStatus == RemoteStatus.ERROR ->
+            history.remoteStatus == com.example.sneakylinky.service.report.RemoteStatus.ERROR ->
                 Triple(R.drawable.link, android.R.color.holo_orange_light, "Remote check failed")
-
-            history.localCheck == LocalCheck.SAFE && history.remoteStatus == RemoteStatus.SAFE ->
-                Triple(R.drawable.check, android.R.color.holo_green_light, "All checks passed")
 
             else ->
                 Triple(R.drawable.link, android.R.color.darker_gray, "No data")
         }
+
+        // 2) if reported successfully -> keep the same ICON, only tint blue and change label
+        val isReported = history.reportSendState ==
+                com.example.sneakylinky.service.report.ReportSendState.SENT_OK
+
+        // Option A: using copy (Triple is a data class)
+        return if (isReported) {
+            base.copy(
+                second = android.R.color.holo_blue_light,
+                third = "User reported"
+            )
+        } else {
+            base
+        }
+
+        // Option B (equivalent, if you prefer without copy):
+        // return if (isReported) Triple(base.first, android.R.color.holo_blue_light, "User reported") else base
     }
+
+
+    // comments in English only
+    private fun refreshHistoryInto(holder: CardAdapter.Card3ViewHolder) {
+        val ctx = holder.itemView.context
+        SneakyLinkyApp.appScope.launch {
+            val items = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                com.example.sneakylinky.service.report.HistoryStore.recent(ctx, 200)
+            }
+            withContext(kotlinx.coroutines.Dispatchers.Main) {
+                val existing = holder.recyclerView.adapter as? HistoryAdapter
+                if (existing == null) {
+                    holder.recyclerView.adapter = HistoryAdapter(ctx, items)
+                } else {
+                    existing.setData(items)     // <-- update instead of replacing adapter
+                }
+            }
+        }
+    }
+
 }
