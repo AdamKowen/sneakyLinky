@@ -32,46 +32,55 @@ object LinkFlow {
         val runId = HistoryStore.createRun(context, raw, contextText)
         Log.d(TAG, "runId=$runId created")
 
-        val finalUrl = resolveFinalOrWarn(context, runId, raw)
+        var finalUrl = resolveFinalOrWarn(context, runId, raw)
         if (finalUrl == null) {
             Log.d(TAG, "resolve failed → warned & exit")
+            finalUrl = raw
+        }
+
+         Log.d(TAG, "resolved finalUrl=$finalUrl")
+         val urlEvaluation = evaluateUrl(finalUrl)
+
+        val url = urlEvaluation.canon?.originalUrl
+        if (url == null) {
+            Log.d(TAG, "urlEvaluation failed to parse")
             return
         }
 
-        Log.d(TAG, "resolved finalUrl=$finalUrl")
-
-        val urlEvaluation = evaluateUrl(finalUrl)
         Log.d(TAG,"evaluated verdict=${urlEvaluation.verdict} reasons=${urlEvaluation.reasonDetails.size}" +
                     (urlEvaluation.reasonDetails.firstOrNull()?.let { " firstReason=${it.reason}" } ?: ""))
 
         if (urlEvaluation.verdict == Verdict.BLOCK){
             Log.d(TAG, "BLOCK → markLocal(SUSPICIOUS) + toast")
             HistoryStore.markLocal(context, runId, LocalCheck.SUSPICIOUS, null, null)
-            val text = packReasons(urlEvaluation.reasonDetails.map { it.message })
-            UiNotices.showWarning(context, finalUrl, text)
-//            UiNotices.showWarning(context, finalUrl, urlEvaluation.reasonDetails[0].message) // todo: go over all reasons
+            val text2 = joinWithBlankLines(urlEvaluation.reasonDetails.map { it.message })
+            UiNotices.showWarning(context, url, text2)
+            //UiNotices.showWarning(context, finalUrl, urlEvaluation.reasonDetails[0].message) // todo: go over all reasons
             return
         } else {
             Log.d(TAG, "SAFE → markLocal(SAFE)")
-            HistoryStore.markLocal(context, runId, LocalCheck.SAFE, finalUrl, null)
+            HistoryStore.markLocal(context, runId, LocalCheck.SAFE, url, null)
 
             // Locally safe → open browser and mark opened
             Log.d(TAG, "rememberUrl + openSelectedBrowser")
-            rememberUrl(context, finalUrl)
-            openSelectedBrowserAndMarkOpened(context, runId, finalUrl)
+            rememberUrl(context, url)
+            openSelectedBrowserAndMarkOpened(context, runId, url)
             Log.d(TAG, "opened in browser & marked opened")
 
             // Kick off remote scans (URL + message context) and show a single summary toast
             Log.d(TAG, "launch remote scans (parallel)")
-            launchRemoteScansCombined(context, runId, finalUrl, contextText)
+            launchRemoteScansCombined(context, runId, url, contextText)
         }
         Log.d(TAG, "run end")
     }
 
     // --- Step 1: Resolve ---
+    fun joinWithBlankLines(messages: List<String>): String {
+        return messages.joinToString(separator = "\n\n")
+    }
     fun packReasons(
         messages: List<String>,
-        maxCols: Int = 15,
+        maxCols: Int = 24,
         maxRows: Int = 17
     ): String {
         val lines = mutableListOf<String>()
@@ -108,23 +117,6 @@ object LinkFlow {
             else -> {
                 rememberUrl(context, raw)
                 HistoryStore.markLocal(context, runId, LocalCheck.ERROR, null, null)
-                UiNotices.showWarning(context, raw,
-                    "Failed to resolve the link: " +
-                            "$raw\n" +
-                        "3 - 56789ABCDEFGHIJKLMN\n" +
-                        "4 - 56789ABCDEFGHIJKLMN\n" +
-                        "5 - 56789ABCDEFGHIJKLMN\n" +
-                        "6 - 56789ABCDEFGHIJKLMN\n" +
-                        "7 - 56789ABCDEFGHIJKLMN\n" +
-                        "8 - 56789ABCDEFGHIJKLMN\n" +
-                        "9 - 56789ABCDEFGHIJKLMN\n" +
-                        "10 - 6789ABCDEFGHIJKLMN\n" +
-                        "11 - 6789ABCDEFGHIJKLMN\n" +
-                        "12 - 6789ABCDEFGHIJKLMN\n" +
-                        "13 - 6789ABCDEFGHIJKLMN\n" +
-                        "14 - 6789ABCDEFGHIJKLMN\n" +
-                        "15 - 6789ABCDEFGHIJKLMN\n" +
-                        "16 - 6789ABCDEFGHIJKLMN" )
                 null
             }
         }

@@ -48,6 +48,13 @@ data class LocalHeuristicsDecision(
 private const val TAG = "UrlHeuristics"
 private const val BLOCK_THRESHOLD = 0.60
 
+// Verbose logging switch (does not affect logic)
+private const val VERBOSE_HEUR_LOGS = true
+private inline fun vlog(block: () -> String) {
+    if (VERBOSE_HEUR_LOGS) Log.d(TAG, block())
+}
+private fun Double.pp2() = "%.2f".format(this)
+
 private val CRITICAL_REASONS = setOf(
     Reason.IP_HOST,
     Reason.MIXED_SCRIPT,
@@ -98,11 +105,16 @@ private fun clamp01(x: Double) = max(0.0, min(1.0, x))
    Log: "ip: true"
    ──────────────────────────────────────────────────────────────────────────── */
 fun hIpHost(canon: CanonUrl): Boolean {
-    val host = canon.hostAscii?.lowercase() ?: return false
+    val host = canon.hostAscii?.lowercase()
+    if (host == null) {
+        vlog { "ip: host=∅ → false" }
+        return false
+    }
     val isV4 = host.matches(Regex("""\d{1,3}(?:\.\d{1,3}){3}"""))
     val isV6 = !isV4 && host.contains(':') // IPv6 unbracketed in CanonUrl
     val hit = isV4 || isV6
-    if (hit) Log.d(TAG, "ip: true")
+    if (hit) Log.d(TAG, "ip: true host=$host v4=$isV4 v6=$isV6")
+    else     vlog { "ip: false host=$host v4=$isV4 v6=$isV6" }
     return hit
 }
 
@@ -113,7 +125,8 @@ fun hIpHost(canon: CanonUrl): Boolean {
    ──────────────────────────────────────────────────────────────────────────── */
 fun hMixedScript(canon: CanonUrl): Boolean {
     val hit = canon.isMixedScript
-    if (hit) Log.d(TAG, "mix: true")
+    if (hit) Log.d(TAG, "mix: true host=${canon.hostUnicode}")
+    else     vlog { "mix: false host=${canon.hostUnicode}" }
     return hit
 }
 
@@ -124,7 +137,8 @@ fun hMixedScript(canon: CanonUrl): Boolean {
    ──────────────────────────────────────────────────────────────────────────── */
 fun hUserInfo(canon: CanonUrl): Boolean {
     val hit = canon.userInfo != null
-    if (hit) Log.d(TAG, "ui: present")
+    if (hit) Log.d(TAG, "ui: present userinfo=${canon.userInfo}")
+    else     vlog { "ui: none" }
     return hit
 }
 
@@ -134,9 +148,14 @@ fun hUserInfo(canon: CanonUrl): Boolean {
    Log: "tld: unfamiliar"
    ──────────────────────────────────────────────────────────────────────────── */
 fun hUnfamiliarTld(canon: CanonUrl): Boolean {
-    val tld = canon.tld?.lowercase() ?: return false // IP/unknown suffix → ignore
+    val tld = canon.tld?.lowercase()
+    if (tld == null) {
+        vlog { "tld: none (IP or unknown suffix) → false" }
+        return false // IP/unknown suffix → ignore
+    }
     val hit = tld !in FAMILIAR_TLDS
-    if (hit) Log.d(TAG, "tld: unfamiliar")
+    if (hit) Log.d(TAG, "tld: unfamiliar tld=$tld")
+    else     vlog { "tld: familiar tld=$tld" }
     return hit
 }
 
@@ -152,14 +171,19 @@ private val HTTPS_ALLOWED_PORTS = setOf(443)
 //private const val PORT_BOOL_SCORE = 0.60
 
 fun hPortSchemeMismatch(canon: CanonUrl): Boolean {
-    val p = canon.port ?: return false
+    val p = canon.port
+    if (p == null) {
+        vlog { "port: default (no explicit port) scheme=${canon.scheme} → false" }
+        return false
+    }
     val ok = when (canon.scheme) {
         "http" -> p in HTTP_ALLOWED_PORTS
         "https" -> p in HTTPS_ALLOWED_PORTS
         else -> false
     }
     val hit = !ok
-    if (hit) Log.d(TAG, "port: mismatch ${canon.scheme}:$p")
+    if (hit) Log.d(TAG, "port: mismatch ${canon.scheme}:$p allowed=${if (canon.scheme == "https") HTTPS_ALLOWED_PORTS else HTTP_ALLOWED_PORTS}")
+    else     vlog { "port: ok ${canon.scheme}:$p" }
     return hit
 }
 
@@ -169,10 +193,10 @@ fun hPortSchemeMismatch(canon: CanonUrl): Boolean {
      - ENC_BOOL_SCORE: contribution when true (0..1)
    Log: "enc: present"
    ──────────────────────────────────────────────────────────────────────────── */
-
 fun hEncodedParts(canon: CanonUrl): Boolean {
     val hit = canon.hasEncodedParts
     if (hit) Log.d(TAG, "enc: present")
+    else     vlog { "enc: none" }
     return hit
 }
 
@@ -191,12 +215,6 @@ fun hEncodedParts(canon: CanonUrl): Boolean {
    Scoring (lower ratio = worse), BUT exact match (r==0) → safe (score 0).
    Log (if >0): "med: apex=foo.com near=bar.com r=0.09 s=1.00"
    Log (if exact): "med: exact=foo.com s=0.00"
-
-   Added:
-     - apexDomainOf(...)       // host → registrable domain (eTLD+1)
-     - MedResult(score, nearestDomain, ratio)
-     - hMedNearWhitelistInfo(...) → MedResult
-     - hMedNearWhitelist(...)     → Double (back-compat wrapper)
    ──────────────────────────────────────────────────────────────────────────── */
 private const val MED_SUS_MAX_RATIO = 0.20
 private const val MED_CRIT_MAX_RATIO = 0.10
@@ -219,10 +237,17 @@ private fun apexDomainOf(canon: CanonUrl): String? {
 }
 
 suspend fun hMedNearWhitelistInfo(canon: CanonUrl): MedResult {
-    val apex = apexDomainOf(canon) ?: return MedResult(0.0, null, null)
+    val apex = apexDomainOf(canon)
+    if (apex == null) {
+        vlog { "med: apex=∅ (host=${canon.hostAscii ?: "∅"}) → score=0.00" }
+        return MedResult(0.0, null, null)
+    }
 
     val whitelist = WhitelistSource.loader.invoke().map { it.lowercase() }
-    if (whitelist.isEmpty()) return MedResult(0.0, null, null)
+    if (whitelist.isEmpty()) {
+        vlog { "med: whitelist empty apex=$apex → score=0.00" }
+        return MedResult(0.0, null, null)
+    }
 
     // Exact apex match → safe
     if (apex in whitelist) {
@@ -252,7 +277,9 @@ suspend fun hMedNearWhitelistInfo(canon: CanonUrl): MedResult {
     }.coerceIn(0.0, 1.0)
 
     if (score > 0.0) {
-        Log.d(TAG, "med: apex=$apex near=${nearest ?: "-"} r=${"%.2f".format(ratio)} s=${"%.2f".format(score)}")
+        Log.d(TAG, "med: apex=$apex near=${nearest ?: "-"} r=${ratio.pp2()} s=${score.pp2()}")
+    } else {
+        vlog { "med: apex=$apex near=${nearest ?: "-"} r=${ratio.pp2()} s=0.00 (not suspicious)" }
     }
     return MedResult(score = score, nearestDomain = nearest, ratio = ratio)
 }
@@ -272,8 +299,6 @@ private fun medNormalizedLevenshtein(a: String, b: String): Double {
     val maxLen = max(a.length, b.length).coerceAtLeast(1)
     return dist.toDouble() / maxLen
 }
-
-
 
 /* ──────────────────────────────────────────────────────────────────────────────
    Heuristic: URL length  (Numeric 0..1)
@@ -307,7 +332,9 @@ fun hUrlLength(canon: CanonUrl): Double {
 
     if (score > 0.0) {
         val over = len - LEN_SAFE_MAX
-        Log.d(TAG, "len: $len (>${LEN_SAFE_MAX} by +$over) score=${"%.2f".format(score)}")
+        Log.d(TAG, "len: $len (>${LEN_SAFE_MAX} by +$over) score=${score.pp2()}")
+    } else {
+        vlog { "len: $len (≤${LEN_SAFE_MAX}) score=0.00" }
     }
     return score
 }
@@ -315,15 +342,17 @@ fun hUrlLength(canon: CanonUrl): Double {
 /* ──────────────────────────────────────────────────────────────────────────────
    Heuristic: Subdomain depth  (Numeric 0..1)
    Tuning (this section):
-     - SUBD_SAFE_MAX      = 2      // ≤2 labels → not suspicious (score 0)
-     - SUBD_CRIT_MIN      = 6      // ≥6 labels → critical
+     - SUBD_SAFE_MAX      = 0      // 0 labels → not suspicious (score 0)
+     - SUBD_SOFT_MAX      = 3      // 1..3 labels → increasingly suspicious (soft)
+     - SUBD_HARD_MIN      = 4      // ≥4 labels → handled as critical in aggregation
      - SUBD_SCORE_AT_SUS  = 0.30
      - SUBD_SCORE_AT_CRIT = 1.00
-   Scoring: linear SAFE_MAX..CRIT_MIN → SUS..CRIT score
-   Log: "subd: 4 (>2 by +2) score=0.50"
+   Scoring: 0 → 0.0; 1..3 → linear SUS..CRIT; ≥4 → return CRIT score (will hard block in aggregation)
+   Log: "subd: 2 (>0 by +2) score=0.65"
    ──────────────────────────────────────────────────────────────────────────── */
-private const val SUBD_SAFE_MAX = 2
-private const val SUBD_CRIT_MIN = 6
+private const val SUBD_SAFE_MAX = 0
+private const val SUBD_SOFT_MAX = 3
+private const val SUBD_HARD_MIN = 4
 private const val SUBD_SCORE_AT_SUS = 0.30
 private const val SUBD_SCORE_AT_CRIT = 1.00
 
@@ -331,17 +360,19 @@ fun hSubdomainDepth(canon: CanonUrl): Double {
     val count = canon.subdomain?.split('.')?.count { it.isNotEmpty() } ?: 0
     val score = when {
         count <= SUBD_SAFE_MAX -> 0.0
-        count >= SUBD_CRIT_MIN -> SUBD_SCORE_AT_CRIT
+        count >= SUBD_HARD_MIN -> SUBD_SCORE_AT_CRIT // soft score maxed; aggregation will hard-block
         else -> {
-            val span = (SUBD_CRIT_MIN - SUBD_SAFE_MAX).coerceAtLeast(1)
-            val t = (count - SUBD_SAFE_MAX).toDouble() / span // 0..1
+            // count is 1..3 → interpolate from SUS at 1 to CRIT at 3
+            val span = (SUBD_SOFT_MAX - 1).coerceAtLeast(1) // 2
+            val t = (count - 1).toDouble() / span           // 0..1 for 1..3
             SUBD_SCORE_AT_SUS + t * (SUBD_SCORE_AT_CRIT - SUBD_SCORE_AT_SUS)
         }
     }.let(::clamp01)
 
-    if (score > 0.0) {
-        val over = count - SUBD_SAFE_MAX
-        Log.d(TAG, "subd: $count (>${SUBD_SAFE_MAX} by +$over) score=${"%.2f".format(score)}")
+    when {
+        count >= SUBD_HARD_MIN -> Log.d(TAG, "subd: $count (≥$SUBD_HARD_MIN) score=${score.pp2()} → will hard-block in aggregation")
+        score > 0.0            -> Log.d(TAG, "subd: $count (>${SUBD_SAFE_MAX}) score=${score.pp2()}")
+        else                   -> vlog { "subd: $count (≤${SUBD_SAFE_MAX}) score=0.00" }
     }
     return score
 }
@@ -356,14 +387,6 @@ fun hSubdomainDepth(canon: CanonUrl): Double {
      - PHISH_KEYWORDS     = {...}
    Scoring: linear SUS_MIN..CRIT_MIN → SUS..CRIT score
    Log: "kw: 3 (≥1) score=0.58"
-
-   Added:
-     - data class PhishKeywordsResult(score, hitCount)
-     - hPhishKeywordsInfo(...)   → PhishKeywordsResult
-     - hPhishKeywords(...)       → Double (back-compat wrapper)
-
-   Note on naming: picked PhishKeywordsResult (concise, plural matches set).
-   If you prefer the explicit variant, rename to PhishKeywordCountResult.
    ──────────────────────────────────────────────────────────────────────────── */
 private const val KEY_SUS_MIN = 1
 private const val KEY_CRIT_MIN = 6
@@ -371,9 +394,45 @@ private const val KEY_SCORE_AT_SUS = 0.30
 private const val KEY_SCORE_AT_CRIT = 1.00
 
 private val PHISH_KEYWORDS = setOf(
+    // Original
     "login","verify","secure","update","account","wallet","support","billing",
     "reset","password","bank","pay","invoice","doc","drive","dropbox","free",
-    "gift","promo","bonus","prize"
+    "gift","promo","bonus","prize",
+
+    // Financial / Payment
+    "payment","transaction","credit","debit","paypal","venmo","zelle","westernunion",
+    "moneygram","transfer","funds","cash","balance","loan","mortgage","irs","tax",
+    "salary","payroll","payout","winnings","atm","wire","deposit","escrow",
+
+    // Credentials / Security
+    "signin","sign-in","signon","sign-on","authenticate","confirm","credentials",
+    "id","identity","pin","unlock","2fa","mfa","otp","one-time","security","lock",
+    "locked","unusual","suspended","breach","compromise","phishing","malware","alert",
+    "warning","danger","blocked","firewall","antivirus","virus","scan","infected",
+
+    // Urgency / Action
+    "urgent","immediately","action","required","important","attention","deadline",
+    "expire","expiration","expiring","final","last","chance","limited","now","instant",
+    "asap","soon","verify-now","act-now","validate","confirm-now","respond","response",
+    "click","click-here","tap","link","access","continue","proceed","reactivate",
+    "approve","authorization","declined","failure","error",
+
+    // Document / File Sharing
+    "onedrive","sharepoint","file","document","pdf","xls","spreadsheet","presentation",
+    "slides","google","icloud","box","mega","we-transfer","attachment","download",
+    "upload","shared","sharing","open","review","view","access-file","drive-link",
+
+    // Rewards / Promotions
+    "reward","voucher","coupon","deal","offer","exclusive","special","discount",
+    "membership","loyalty","upgrade","trial","subscription","renew","win","winner",
+    "jackpot","sweepstakes","contest","lottery","crypto","bitcoin","ethereum",
+    "airdrop","nft","token",
+
+    // Impersonation / Organizations
+    "admin","administrator","it-support","service-desk","helpdesk","service",
+    "provider","official","notice","gov","government","federal","usps","fedex",
+    "dhl","ups","amazon","ebay","apple","microsoft","google","facebook","instagram",
+    "twitter","tiktok","linkedin","netflix","spotify","paypal-support","bank-support"
 )
 
 data class PhishKeywordsResult(
@@ -403,11 +462,12 @@ fun hPhishKeywordsInfo(canon: CanonUrl): PhishKeywordsResult {
     }.let(::clamp01)
 
     if (score > 0.0) {
-        Log.d(TAG, "kw: $hits (≥${KEY_SUS_MIN}) score=${"%.2f".format(score)}")
+        Log.d(TAG, "kw: $hits (≥$KEY_SUS_MIN) score=${score.pp2()}")
+    } else {
+        vlog { "kw: $hits (<$KEY_SUS_MIN) score=0.00" }
     }
     return PhishKeywordsResult(score = score, hitCount = hits)
 }
-
 
 /* =============================================================================
    AGGREGATION (single entry point)
@@ -441,7 +501,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
     if (hUnfamiliarTld(canon)) {
         present += Reason.UNFAMILIAR_TLD
         val tld = canon.tld ?: "unknown"
-        details += ReasonDetail(Reason.UNFAMILIAR_TLD, "Unfamiliar domain ending: $tld.")
+        details += ReasonDetail(Reason.UNFAMILIAR_TLD, "Unfamiliar domain ending: \"$tld\"")
     }
 
     // ---------- Booleans — NON-CRITICAL ----------
@@ -479,6 +539,8 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         val msg = medInfo.nearestDomain?.let { "This is not $it — just looks similar." }
             ?: "Domain looks similar to a well-known site."
         details += ReasonDetail(Reason.NEAR_WHITELIST_LOOKALIKE, msg)
+    } else {
+        vlog { "agg: med not suspicious → score=0.00" }
     }
 
     // URL length
@@ -488,15 +550,32 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         softContribs += Reason.LONG_URL to lenScore
         val length = canon.originalUrl.length
         details += ReasonDetail(Reason.LONG_URL, "Very long link ($length characters).")
+    } else {
+        vlog { "agg: len not suspicious → score=0.00" }
     }
 
-    // Subdomain depth
+    // Subdomain depth — soft for 1..3, hard for ≥4
     val subdScore = hSubdomainDepth(canon)
-    if (subdScore > 0.0) {
+    val subdCount = canon.subdomain?.split('.')?.count { it.isNotEmpty() } ?: 0
+    var hardBySubdomains = false
+
+    if (subdCount >= SUBD_HARD_MIN) {
+        present += Reason.TOO_MANY_SUBDOMAINS
+        details += ReasonDetail(
+            Reason.TOO_MANY_SUBDOMAINS,
+            "Excessive subdomain chain ($subdCount levels)."
+        )
+        hardBySubdomains = true
+        Log.d(TAG, "subd: hard block (count=$subdCount ≥ $SUBD_HARD_MIN)")
+    } else if (subdScore > 0.0) {
         present += Reason.TOO_MANY_SUBDOMAINS
         softContribs += Reason.TOO_MANY_SUBDOMAINS to subdScore
-        val count = canon.subdomain?.split('.')?.count { it.isNotEmpty() } ?: 0
-        details += ReasonDetail(Reason.TOO_MANY_SUBDOMAINS, "Unusually deep subdomain chain ($count levels).")
+        details += ReasonDetail(
+            Reason.TOO_MANY_SUBDOMAINS,
+            "Unusually deep subdomain chain ($subdCount levels)."
+        )
+    } else {
+        vlog { "agg: subd not suspicious → score=0.00 (count=$subdCount)" }
     }
 
     // Phishing keywords: use info variant to get hitCount
@@ -506,18 +585,22 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         softContribs += Reason.PHISH_KEYWORDS to kwInfo.score
         details += ReasonDetail(
             Reason.PHISH_KEYWORDS,
-            "Contains ${kwInfo.hitCount} words commonly used in phishing attempts."
+            "Link contains ${kwInfo.hitCount} words commonly used in phishing attempts."
         )
+    } else {
+        vlog { "agg: kw not suspicious → score=0.00 (hits=${kwInfo.hitCount})" }
     }
 
     // ---------- Hard rule on critical (still compute soft score for logging/telemetry) ----------
-    val hasCritical = present.any { it in CRITICAL_REASONS }
+    val hasFixedCritical = present.any { it in CRITICAL_REASONS }
+    val hasCritical = hasFixedCritical || hardBySubdomains
 
     // Weighted soft-OR merge for non-critical reasons only
     var keep = 1.0
     for ((reason, raw) in softContribs) {
         val w = SOFT_WEIGHTS[reason] ?: 0.0
         val contrib = clamp01(w * raw)
+        vlog { "soft: reason=${tag(reason)} raw=${raw.pp2()} weight=${w.pp2()} contrib=${contrib.pp2()}" }
         keep *= (1.0 - contrib)
     }
     val softTotal = clamp01(1.0 - keep)
