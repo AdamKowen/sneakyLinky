@@ -163,5 +163,28 @@ interface LinkHistoryDao {
     )
 
 
+    // Stream every run, newest first (updates automatically)
+    @Query("""
+        SELECT * FROM link_history
+        ORDER BY createdAt DESC
+        LIMIT :limit
+    """)
+    fun recentStream(limit: Int = 200): kotlinx.coroutines.flow.Flow<List<LinkHistory>>
+
+    //clear all rows
+    @Query("DELETE FROM link_history")
+    suspend fun clearAll()
+
+
+
+    // comments in English only
+    @Query("""
+    SELECT * FROM link_history
+    ORDER BY createdAt DESC
+    LIMIT :limit
+""")
+    suspend fun recent(limit: Int = 200): List<LinkHistory>
+
+
 }
 

@@ -47,23 +47,21 @@ object ReportDispatcher {
         // Mark local intent (SENDING) — positional args
         HistoryStore.markUserReport(context, historyId, verdict, reason, ReportSendState.SENDING)
 
-        val latest = runCatching { HistoryStore.latestForUrl(context, url) }.getOrNull()
-        val systemClassification = mapSystemClassification(latest?.localCheck, latest?.remoteStatus)
 
-        val userClassification = when (verdict) {
-            UserVerdict.OK -> "OK"
-            UserVerdict.SUSPICIOUS -> "SUSPICIOUS"
-            UserVerdict.NONE -> "UNKNOWN"
-        }
+        val latest = runCatching { HistoryStore.latestForUrl(context, url) }.getOrNull()
+        val systemCls = mapSystemClassification(latest?.localCheck, latest?.remoteStatus)
+        val userCls   = mapUserClassification(verdict)
+
+// server requires a non-empty reason string
+        val safeReason = (reason?.takeIf { it.isNotBlank() } ?: "no-reason-provided")
 
         val json = JsonObject().apply {
             addProperty("url", url)
-            addProperty("systemClassification", systemClassification)
-            addProperty("userClassification", userClassification)
-            if (!reason.isNullOrBlank()) addProperty("userReason", reason)
+            addProperty("systemClassification", systemCls) // Int (0/1), not a String
+            addProperty("userClassification", userCls)     // Int (0/1), not a String
+            addProperty("userReason", safeReason)          // always non-empty
         }
         val body = RequestBody.create(JSON, gson.toJson(json))
-
         val request = Request.Builder()
             .url(ENDPOINT)
             .post(body)
@@ -89,18 +87,26 @@ object ReportDispatcher {
     }
 
     // Mapping based on your enums
-    private fun mapSystemClassification(local: LocalCheck?, remote: RemoteStatus?): String {
-        when (remote) {
-            RemoteStatus.SAFE -> return "OK"
-            RemoteStatus.RISK, RemoteStatus.ERROR -> return "SUSPICIOUS"
-            RemoteStatus.NOT_STARTED, RemoteStatus.RUNNING, null -> { /* fall back */ }
-        }
-        return when (local) {
-            LocalCheck.SAFE -> "OK"
-            LocalCheck.SUSPICIOUS, LocalCheck.ERROR -> "SUSPICIOUS"
-            LocalCheck.UNKNOWN, null -> "UNKNOWN"
+
+    private fun mapSystemClassification(local: LocalCheck?, remote: RemoteStatus?): Int {
+        return when {
+            remote == RemoteStatus.SAFE -> 0
+            remote == RemoteStatus.RISK || remote == RemoteStatus.ERROR -> 1
+            local == LocalCheck.SAFE -> 0
+            local == LocalCheck.SUSPICIOUS || local == LocalCheck.ERROR -> 1
+            else -> 1 // conservative fallback; schema doesn't allow UNKNOWN
         }
     }
+
+    private fun mapUserClassification(verdict: UserVerdict): Int {
+        return when (verdict) {
+            UserVerdict.OK          -> 0
+            UserVerdict.SUSPICIOUS  -> 1
+            UserVerdict.NONE        -> 1 // pick 1 as fallback (schema is [0,1])
+        }
+    }
+
+
 
     private fun parseAckId(raw: String?): String? = runCatching {
         if (raw.isNullOrBlank()) return null

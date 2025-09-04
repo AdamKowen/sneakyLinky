@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- comments in English only -->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -6,26 +7,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/backgroundPurple"
+    android:layoutDirection="ltr"
     android:padding="20dp">
 
-    <!-- Top card: Link clicked -->
-
-    <!-- Right panel: two toggles -->
-
-    <!-- BIG vertical arrow between top and bottom -->
-
+    <!-- Top card: centered horizontally near top -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardLinkClicked"
         android:layout_width="193dp"
         android:layout_height="157dp"
-        android:layout_marginTop="168dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginTop="156dp"
         app:cardBackgroundColor="@color/card_selected_background"
         app:cardCornerRadius="24dp"
         app:cardUseCompatPadding="true"
-        app:layout_constraintEnd_toStartOf="@+id/panelToggles"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <!-- Keep content flexible; avoid fixed dp sizes -->
         <LinearLayout
@@ -61,47 +57,18 @@
             <!-- Compact CTA button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSetDefault"
-                style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:minHeight="36dp"
-                android:text="Click to set SneakyLinky as default"
-                android:textColor="@android:color/white"
-                android:textSize="12dp"
+                android:text="Check if the app is the defualt browser"
+                android:textSize="12sp"
                 app:iconPadding="8dp"
                 app:iconTint="@android:color/white" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <ImageView
-        android:id="@+id/ivArrowBranchLeft"
-        android:layout_width="52dp"
-        android:layout_height="115dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/arrow_left"
-        app:layout_constraintBottom_toTopOf="@id/cardOpensIn"
-        app:layout_constraintEnd_toStartOf="@id/panelToggles"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toEndOf="@id/cardLinkClicked"
-        app:layout_constraintTop_toBottomOf="@id/cardLinkClicked"
-        app:layout_constraintVertical_bias="0.736"
-        app:tint="@android:color/white" />
-
-    <ImageView
-        android:id="@+id/ivArrowBranchRight"
-        android:layout_width="54dp"
-        android:layout_height="76dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/arrow_right"
-        app:layout_constraintBottom_toTopOf="@id/cardOpensIn"
-        app:layout_constraintEnd_toStartOf="@id/panelToggles"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toEndOf="@id/cardLinkClicked"
-        app:layout_constraintTop_toBottomOf="@id/cardLinkClicked"
-        app:layout_constraintVertical_bias="0.306"
-        app:tint="@android:color/white" />
-
+    <!-- Main vertical arrow: centered under top card -->
     <ImageView
         android:id="@+id/ivArrowDown"
         android:layout_width="45dp"
@@ -111,125 +78,26 @@
         android:adjustViewBounds="true"
         android:scaleType="fitXY"
         android:src="@drawable/long_arrow"
-        app:layout_constraintBottom_toTopOf="@id/cardOpensIn"
-        app:layout_constraintEnd_toEndOf="@id/cardLinkClicked"
-        app:layout_constraintHorizontal_bias="0.76"
-        app:layout_constraintStart_toStartOf="@id/cardLinkClicked"
         app:layout_constraintTop_toBottomOf="@id/cardLinkClicked"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:tint="@android:color/white" />
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/panelToggles"
-        android:layout_width="161dp"
-        android:layout_height="211dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="180dp"
-        app:cardBackgroundColor="@color/card_selected_background"
-        app:cardCornerRadius="24dp"
-        app:cardUseCompatPadding="true"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/cardLinkClicked"
-        app:layout_constraintTop_toTopOf="@id/cardLinkClicked">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="18dp">
-
-            <!-- Toggle: Background link check (label top, switch below) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_marginEnd="8dp"
-                        android:src="@drawable/cloud_icon"
-                        app:tint="@android:color/white" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Background link check"
-                        android:textColor="@android:color/white" />
-                </LinearLayout>
-
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchCloudLinks"
-                    android:layout_width="116dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:textOff=""
-                    android:textOn=""
-                    app:showText="false" />
-            </LinearLayout>
-
-            <!-- Toggle: Background message check (label top, switch below) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_marginEnd="8dp"
-                        android:src="@drawable/message"
-                        app:tint="@android:color/white" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Background message check"
-                        android:textColor="@android:color/white" />
-                </LinearLayout>
-
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchMsgCheck"
-                    android:layout_width="129dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:textOff=""
-                    android:textOn=""
-                    app:showText="false" />
-            </LinearLayout>
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
+    <!-- Card "Opens in": centered under the arrow -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardOpensIn"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
         app:cardBackgroundColor="@color/card_selected_background"
         app:cardCornerRadius="28dp"
         app:cardUseCompatPadding="true"
-        app:layout_constraintEnd_toStartOf="@id/panelToggles"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintTop_toBottomOf="@id/ivArrowDown"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ivArrowDown">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -247,54 +115,220 @@
                 android:layout_width="12dp"
                 android:layout_height="0dp" />
 
-            <!-- Browser icon button (actual chosen browser icon) -->
             <ImageButton
                 android:id="@+id/btnChosenBrowser"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/browser"
-                app:tint="@android:color/white" />
+                android:background="@android:color/transparent"
+            android:scaleType="centerInside"
+            android:adjustViewBounds="true"
+            android:src="@drawable/browser"/>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <LinearLayout
+    <!-- Left info panel: to the LEFT of the main arrow, vertically centered to it -->
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/stripLocalAnalysis"
-        android:layout_width="127dp"
-        android:layout_height="100dp"
-        android:layout_marginEnd="-6dp"
-        android:elevation="4dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="@id/ivArrowDown"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
+        android:background="@android:color/transparent"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:cardElevation="0dp"
+        app:cardUseCompatPadding="false"
+        app:cardCornerRadius="20dp"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/ivArrowDown"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@id/cardLinkClicked"
         app:layout_constraintTop_toTopOf="@id/ivArrowDown"
-        app:layout_constraintVertical_bias="0.538">
+        app:layout_constraintBottom_toBottomOf="@id/ivArrowDown"
+        android:translationY="-15dp">
 
-        <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:layout_marginEnd="8dp"
-            android:src="@drawable/shield"
-            app:tint="@android:color/white" />
-
-
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnUpdateDbNow"
+        <!-- Stack content vertically & center -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Update local database now" />
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="10dp">
 
-    </LinearLayout>
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginBottom="6dp"
+                android:src="@drawable/shield"
+                app:tint="@android:color/white" />
 
-    <!-- Curved branch arrows (kept; positioned neatly between columns) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:breakStrategy="balanced"
+                android:gravity="center"
+                android:hyphenationFrequency="none"
+                android:paddingBottom="6dp"
+                android:text="Instant on-device URL analysis"
+                android:textColor="@android:color/white"
+                android:textSize="12sp" />
 
-    <!-- Left-side info strip: small shield icon + text (slightly overlapping arrow) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUpdateDbNow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:breakStrategy="balanced"
+                android:ellipsize="end"
+                android:hyphenationFrequency="none"
+                android:maxLines="2"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:text="Update local database"
+                app:autoSizeMaxTextSize="12sp"
+                app:autoSizeMinTextSize="9sp"
+                app:autoSizeStepGranularity="1sp"
+                app:autoSizeTextType="uniform" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
-    <!-- Bottom card: Opens in + chosen browser icon -->
+    <!-- Right of main arrow: container so the two branch arrows can be very close / overlap -->
 
+    <!-- Right toggles panel: right of the branch arrows, vertically centered to them -->
+
+    <FrameLayout
+        android:id="@+id/branchContainer"
+        android:layout_width="71dp"
+        android:layout_height="154dp"
+        app:layout_constraintBottom_toTopOf="@id/cardOpensIn"
+        app:layout_constraintEnd_toStartOf="@id/panelToggles"
+        app:layout_constraintStart_toEndOf="@id/ivArrowDown"
+        app:layout_constraintTop_toBottomOf="@id/cardLinkClicked"
+        app:layout_constraintVertical_bias="0.495">
+
+        <!-- Upper short arrow (can overlap) -->
+        <ImageView
+            android:id="@+id/ivArrowBranchRight"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_gravity="start|top"
+            android:layout_marginStart="15dp"
+            android:layout_marginTop="8dp"
+            android:src="@drawable/arrow_right"
+            android:translationX="0dp"
+            app:tint="@android:color/white" />
+
+        <!-- Lower curved arrow -->
+        <ImageView
+            android:id="@+id/ivArrowBranchLeft"
+            android:layout_width="52dp"
+            android:layout_height="66dp"
+            android:layout_gravity="start|top"
+            android:layout_marginStart="15dp"
+            android:layout_marginTop="64dp"
+            android:src="@drawable/arrow_left"
+            android:translationX="0dp"
+            app:tint="@android:color/white" />
+    </FrameLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/panelToggles"
+        android:layout_width="wrap_content"
+
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="12dp"
+        android:maxWidth="260dp"
+        android:background="@android:color/transparent"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:cardElevation="0dp"
+        app:cardUseCompatPadding="false"
+        app:cardCornerRadius="24dp"
+        app:layout_constraintStart_toEndOf="@id/branchContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/branchContainer"
+        android:translationY="-30dp">  <!-- lift a bit; tweak -4dp/-8dp to taste -->
+
+        <!-- content -->
+        <LinearLayout
+            android:id="@+id/togglesContent"
+            android:layout_width="109dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="8dp">
+
+            <!-- Row 1: Remote link check + switch on the right -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="6dp"
+                    android:src="@drawable/cloud_icon"
+                    app:tint="@android:color/white" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="31dp"
+                    android:layout_weight="1"
+                    android:breakStrategy="balanced"
+                    android:ellipsize="end"
+                    android:hyphenationFrequency="none"
+                    android:maxLines="2"
+                    android:text="Remote link check"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="6dp" />
+
+            <!-- Row 2: Remote message check + switch on the right -->
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switchCloudLinks"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:useMaterialThemeColors="true" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="6dp"
+                    android:src="@drawable/message"
+                    app:tint="@android:color/white" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:breakStrategy="balanced"
+                    android:ellipsize="end"
+                    android:hyphenationFrequency="none"
+                    android:maxLines="3"
+                    android:text="Remote message check"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switchMsgCheck"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:useMaterialThemeColors="true" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

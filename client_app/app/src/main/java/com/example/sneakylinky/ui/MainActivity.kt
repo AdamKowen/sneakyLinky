@@ -48,8 +48,13 @@ class MainActivity : AppCompatActivity() {
     private val apiService = RetrofitClient.apiService
 
 
-    // At the top of MainActivity (inside the class)
     private var tabsAreVisible = true
+
+    private lateinit var viewPager: ViewPager2
+
+
+    private lateinit var accService: android.content.ComponentName
+
 
 
 
@@ -64,6 +69,9 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
 
+        viewPager = findViewById(R.id.viewPager)
+
+        accService = android.content.ComponentName(this, MyAccessibilityService::class.java)
 
         // Apply insets to your real content root (the root layout inside activity_main)
         val contentRoot = findViewById<ViewGroup>(android.R.id.content)
@@ -80,32 +88,28 @@ class MainActivity : AppCompatActivity() {
 
         // Set up cards; "Analyze" button now delegates to LinkFlow
         cardAdapter = CardAdapter(
-            this,
+            context = this,
             onCheckUrl = { raw ->
-                lifecycleScope.launch {
-                    LinkFlow.runLinkFlow(this@MainActivity, raw)
-                }
+                lifecycleScope.launch { LinkFlow.runLinkFlow(this@MainActivity, raw) }
             },
             onAnalyzeText = { pasted ->
                 analyzeText(pasted)
+            },
+            accessibilityService = accService,
+            openBrowserPicker = {
+                viewPager.setCurrentItem(3, true)  // smooth scroll to the browser-pick card
             }
+
         )
+
+        viewPager.adapter = cardAdapter
 
         // Provide Activity ref to AccessibilityService (for UI updates if needed)
         MyAccessibilityService.setActivity(this)
 
-        val viewPager = findViewById<ViewPager2>(R.id.viewPager).apply {
-            clipToPadding = false
-            val pageMarginPx = resources.getDimensionPixelOffset(R.dimen.pageMargin)
-            val pageOffsetPx = resources.getDimensionPixelOffset(R.dimen.offset)
-
-            setPadding(pageMarginPx, 0, pageMarginPx, 0)
-            offscreenPageLimit = 3
-
-            adapter = cardAdapter
-        }
 
         val tabs = findViewById<com.google.android.material.tabs.TabLayout>(R.id.bottomTabs)
+
 
         try {
             com.google.android.material.tabs.TabLayoutMediator(tabs, viewPager) { tab, position ->
@@ -207,6 +211,9 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // Update UI with the last link opened (LinkFlow sets this)
         lastOpenedLink?.let { cardAdapter?.updateCard1Link(it) }
+
+        cardAdapter?.onHostResume()
+
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -435,6 +442,9 @@ class MainActivity : AppCompatActivity() {
             })
         }
     }
+
+
+
 
 
 }

@@ -6,7 +6,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitProvider {
-    private const val BASE_URL = "https://sneaky-server-901205359337.europe-west1.run.app/v1/" // must end with '/'
+    private const val BASE_URL = "https://sneaky-server-901205359337.europe-west1.run.app/v1/"
 
     private val client = OkHttpClient.Builder()
         .readTimeout(30, TimeUnit.SECONDS)

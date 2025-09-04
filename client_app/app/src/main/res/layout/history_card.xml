@@ -5,7 +5,6 @@
     android:layout_marginEnd="24dp"
     android:layout_marginTop="64dp"
     android:layout_marginBottom="20dp"
-
     android:background="@drawable/glass_background_custom"
     android:elevation="4dp">  <!-- shadow -->
 
@@ -14,18 +13,52 @@
         android:padding="0dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center">
+        android:gravity="center"
+        android:layoutDirection="ltr" >
 
-
+        <!-- Title -->
         <TextView
             android:id="@+id/historyTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="History"
             android:textColor="@android:color/white"
-            android:textSize="30dp"
-            android:layout_margin="20dp"/>
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:layout_margin="20dp" />
 
+        <!-- Row: hint left, button right -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <TextView
+                android:id="@+id/tvHint"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Tap link to report"
+                android:textSize="18sp"
+                android:textColor="@android:color/white"
+                android:gravity="start"
+                android:padding="8dp"/>
+
+            <Button
+                android:id="@+id/btnClearHistory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="80dp"
+                android:minHeight="40dp"
+                android:text="Clear history"
+                android:textSize="14sp"
+                android:padding="10dp"/>
+        </LinearLayout>
+
+        <!-- Recycler -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/historyRecycler"
             android:layout_width="match_parent"

@@ -2,6 +2,7 @@ package com.example.sneakylinky.ui
 
 import EdgeAwareCenterSnapHelper
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -15,16 +16,23 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.sneakylinky.R
+import com.example.sneakylinky.SneakyLinkyApp
 import com.example.sneakylinky.service.hotsetdatabase.HotsetSyncScheduler
 import com.example.sneakylinky.util.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 //  constructor accept a callback function for URL checking
-class CardAdapter(private val context: Context, private val onCheckUrl: (String) -> Unit, private val onAnalyzeText: (String) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class CardAdapter(private val context: Context,
+                  private val onCheckUrl: (String) -> Unit,
+                  private val onAnalyzeText: (String) -> Unit,
+                  private val accessibilityService: ComponentName,
+                  private val openBrowserPicker: () -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
 
 
     // SharedPreferences keys
-    private val PREFS_NAME = "sneaky_linky_prefs"
+                  private val PREFS_NAME = "sneaky_linky_prefs"
     private val KEY_HISTORY = "history_urls"
 
     // Load persisted history into a mutable list
@@ -244,6 +252,8 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
                 val adapter = BrowserCarouselAdapter(browsers, ctx) { browser ->
                     val pkgName = browser.activityInfo.packageName
                     saveSelectedBrowser(ctx, pkgName)
+                    // Notify the flow card to refresh its browser icon
+                    notifyItemChanged(2) // LINK_FLOW_CARD index
                     Toast.makeText(ctx, "Selected Browser: ${browser.loadLabel(ctx.packageManager)}", Toast.LENGTH_SHORT).show()
 
                     // Optional: gently bring the picked item into place
@@ -262,12 +272,49 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
             }
 
             is Card3ViewHolder -> {
-                holder.recyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
-                holder.recyclerView.adapter = HistoryAdapter(historyList)
+                val ctx = holder.itemView.context
+
+                if (holder.recyclerView.layoutManager == null) {
+                    holder.recyclerView.layoutManager = LinearLayoutManager(ctx)
+                }
+
+                // set an empty adapter immediately to avoid "No adapter attached" warning
+                if (holder.recyclerView.adapter == null) {
+                    holder.recyclerView.adapter = HistoryAdapter(ctx, emptyList())
+                }
+
+                // initial load + wire clean button
+                refreshHistoryInto(holder)
+
+                holder.itemView.findViewById<Button?>(R.id.btnClearHistory)?.setOnClickListener {
+                    com.example.sneakylinky.SneakyLinkyApp.appScope.launch {
+                        // delete on IO
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            val db = com.example.sneakylinky.data.AppDatabase.getInstance(ctx)
+                            db.openHelper.writableDatabase.execSQL("DELETE FROM link_history")
+                        }
+                        // switch to Main for UI + Toast
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            refreshHistoryInto(holder)
+                            android.widget.Toast.makeText(ctx, "History cleared", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
             }
 
-
             is FlowCardViewHolder -> {
+                val activity = holder.itemView.context as android.app.Activity
+                if (holder.binder == null) {
+                    holder.binder = com.example.sneakylinky.ui.flow.FlowCardBinder(
+                        activity = activity,
+                        root = holder.itemView,
+                        accessibilityService = accessibilityService,
+                        openBrowserPicker = openBrowserPicker
+                    )
+                } else {
+                    // re-sync when rebinding
+                    holder.binder?.onResume()
+                }
             }
 
 
@@ -290,16 +337,18 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
     }
 
     class FlowCardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        init {
-            itemView.findViewById<View?>(R.id.btnUpdateDbNow)?.setOnClickListener {
-                HotsetSyncScheduler.runNow(itemView.context)
-                android.widget.Toast.makeText(
-                    itemView.context,
-                    "Updating local database…",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
+//        init {
+//            itemView.findViewById<View?>(R.id.btnUpdateDbNow)?.setOnClickListener {
+//                HotsetSyncScheduler.runNow(itemView.context)
+//                android.widget.Toast.makeText(
+//                    itemView.context,
+//                    "Updating local database…",
+//                    android.widget.Toast.LENGTH_SHORT
+//                ).show()
+//            }
+//        }
+
+        var binder: com.example.sneakylinky.ui.flow.FlowCardBinder? = null
     }
 
 
@@ -307,19 +356,12 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
      * Public function to set a URL that the first card should display,
      * and also add it to historyList (persisted) and refresh cards #1 and #3.
      */
+    // External helper: set URL into card #1 and refresh history card UI.
     fun updateCard1Link(link: String) {
         pendingUrlForCard1 = link
-
-        // 1) Add the new link at index 0 (so newest appear at top)
-        historyList.add(0, link)
-        // 2) Persist the updated history to SharedPreferences
-        saveHistoryToPrefs()
-
-        // 3) Refresh card #1 to update EditText, and card #3 to update history list
-        notifyItemChanged(0)
-        notifyItemChanged(3)
+        notifyItemChanged(0) // URL field
+        notifyItemChanged(4) // history card
     }
-
     /**
      * Load the persisted history from SharedPreferences.
      * Returns a List<String> of URLs (newest first).
@@ -359,6 +401,40 @@ class CardAdapter(private val context: Context, private val onCheckUrl: (String)
     class BrowserItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val textView: TextView = itemView.findViewById(R.id.browserNameText)
     }
+
+
+    // comments in English only
+    private fun refreshHistoryInto(holder: Card3ViewHolder) {
+        val ctx = holder.itemView.context
+        SneakyLinkyApp.appScope.launch {
+            val items = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                // Using recentDistinct since that's what your DAO currently exposes.
+                // If you add LinkHistoryDao.recent(), switch to it to show every run.
+                com.example.sneakylinky.data.AppDatabase
+                    .getInstance(ctx)
+                    .linkHistoryDao()
+                    .recent(200)
+            }
+            withContext(kotlinx.coroutines.Dispatchers.Main) {
+                holder.recyclerView.adapter = HistoryAdapter(ctx, items)
+            }
+        }
+    }
+
+    /**
+     * Public, simple hook you can call from anywhere (e.g., after a run in LinkFlow)
+     * to force-refresh the history card UI.
+     */
+    fun refreshHistoryCardNow() {
+        // just ask RecyclerView to rebind the history card
+        notifyItemChanged(4) // HISTORY_CARD index
+    }
+
+
+    fun onHostResume() {
+        notifyItemChanged(2) // rebind Flow card to resync switches and icon
+    }
+
 }
 
 
