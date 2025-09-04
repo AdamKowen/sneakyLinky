@@ -122,9 +122,7 @@ fun populateTestData() {
         val wlDao = db.whitelistDao()
         val blDao = db.blacklistDao()
 
-        // Clear any existing data (so you can re-run without duplicates)
-        wlDao.clearAll()
-        blDao.clearAll()
+
 
         // Seed a (truncated) whitelist. Expand as you like.
         val entries = listOf(

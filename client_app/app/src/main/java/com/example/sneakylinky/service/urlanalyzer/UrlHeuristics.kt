@@ -527,7 +527,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
     if (hEncodedParts(canon)) {
         present += Reason.ENCODED_PARTS
         softContribs += Reason.ENCODED_PARTS to 1.0
-        details += ReasonDetail(Reason.ENCODED_PARTS, "Link contains encoded characters.")
+        details += ReasonDetail(Reason.ENCODED_PARTS, "Link contains encodings.")
     }
 
     // ---------- Numeric — with messages ----------
@@ -536,7 +536,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
     if (medInfo.score > 0.0) {
         present += Reason.NEAR_WHITELIST_LOOKALIKE
         softContribs += Reason.NEAR_WHITELIST_LOOKALIKE to medInfo.score
-        val msg = medInfo.nearestDomain?.let { "This is not $it — just looks similar." }
+        val msg = medInfo.nearestDomain?.let { "This is not\n$it\nIf you thought it was\nclose now!"}
             ?: "Domain looks similar to a well-known site."
         details += ReasonDetail(Reason.NEAR_WHITELIST_LOOKALIKE, msg)
     } else {
@@ -549,7 +549,7 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         present += Reason.LONG_URL
         softContribs += Reason.LONG_URL to lenScore
         val length = canon.originalUrl.length
-        details += ReasonDetail(Reason.LONG_URL, "Very long link ($length characters).")
+        details += ReasonDetail(Reason.LONG_URL, "suspiciously long link\n$length characters!")
     } else {
         vlog { "agg: len not suspicious → score=0.00" }
     }
@@ -563,16 +563,21 @@ suspend fun runLocalHeuristicsAndDecide(canon: CanonUrl): LocalHeuristicsDecisio
         present += Reason.TOO_MANY_SUBDOMAINS
         details += ReasonDetail(
             Reason.TOO_MANY_SUBDOMAINS,
-            "Excessive subdomain chain ($subdCount levels)."
+            "Excessive subdomain chain\n$subdCount levels."
         )
         hardBySubdomains = true
         Log.d(TAG, "subd: hard block (count=$subdCount ≥ $SUBD_HARD_MIN)")
     } else if (subdScore > 0.0) {
         present += Reason.TOO_MANY_SUBDOMAINS
         softContribs += Reason.TOO_MANY_SUBDOMAINS to subdScore
+        val msg: String = if (subdCount == 1) {
+            "A single subdomain level slightly raises suspicion"
+        } else {
+            "Unusually deep subdomain\nchain of $subdCount levels"
+        }
         details += ReasonDetail(
             Reason.TOO_MANY_SUBDOMAINS,
-            "Unusually deep subdomain chain ($subdCount levels)."
+            msg
         )
     } else {
         vlog { "agg: subd not suspicious → score=0.00 (count=$subdCount)" }

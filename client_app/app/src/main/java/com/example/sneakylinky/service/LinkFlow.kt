@@ -55,21 +55,30 @@ object LinkFlow {
 
         var finalUrl = resolveFinalOrWarn(context, runId, raw)
         if (finalUrl == null) {
-            Log.d(TAG, "resolve failed → warned & exit")
+            Log.d(TAG, "resolve failed, continuing with raw")
             finalUrl = raw
+        }else{
+            Log.d(TAG, "resolved finalUrl=$finalUrl")
         }
 
-         Log.d(TAG, "resolved finalUrl=$finalUrl")
-         val urlEvaluation = evaluateUrl(finalUrl)
+        val urlEvaluation = evaluateUrl(finalUrl)
 
         val url = urlEvaluation.canon?.originalUrl
         if (url == null) {
             Log.d(TAG, "urlEvaluation failed to parse")
             return
+        } else {
+            Log.d(
+                TAG,
+                "evaluated " +
+                        "verdict=${urlEvaluation.verdict}, " +
+                        "reasonsCount=${urlEvaluation.reasonDetails.size}, " +
+                        "firstReason=${urlEvaluation.reasonDetails.firstOrNull()?.reason}, " +
+                        "originalUrl=${urlEvaluation.canon?.originalUrl}, " +
+                        "source=${urlEvaluation.source}, " +
+                        "score=${urlEvaluation.score}"
+            )
         }
-
-        Log.d(TAG,"evaluated verdict=${urlEvaluation.verdict} reasons=${urlEvaluation.reasonDetails.size}" +
-                    (urlEvaluation.reasonDetails.firstOrNull()?.let { " firstReason=${it.reason}" } ?: ""))
 
         if (urlEvaluation.verdict == Verdict.BLOCK){
             Log.d(TAG, "BLOCK → markLocal(SUSPICIOUS) + toast")
@@ -150,9 +159,9 @@ object LinkFlow {
             else -> {
                 rememberUrl(context, raw)
                 HistoryStore.markLocal(context, runId, LocalCheck.ERROR, null, null)
-                UiNotices.showWarning(context, raw,
-                    "Failed to resolve the link: " +
-                            "$raw\n")
+//                UiNotices.showWarning(context, raw,
+//                    "Failed to resolve the link: " +
+//                            "$raw\n")
                 null
             }
         }
