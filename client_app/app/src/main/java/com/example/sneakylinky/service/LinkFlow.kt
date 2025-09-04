@@ -3,6 +3,7 @@ package com.example.sneakylinky.service
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.core.content.edit
 import com.example.sneakylinky.LinkContextCache
 import com.example.sneakylinky.SneakyLinkyApp
@@ -125,21 +126,7 @@ object LinkFlow {
                 HistoryStore.markLocal(context, runId, LocalCheck.ERROR, null, null)
                 UiNotices.showWarning(context, raw,
                     "Failed to resolve the link: " +
-                            "$raw\n" +
-                        "3 - 56789ABCDEFGHIJKLMN\n" +
-                        "4 - 56789ABCDEFGHIJKLMN\n" +
-                        "5 - 56789ABCDEFGHIJKLMN\n" +
-                        "6 - 56789ABCDEFGHIJKLMN\n" +
-                        "7 - 56789ABCDEFGHIJKLMN\n" +
-                        "8 - 56789ABCDEFGHIJKLMN\n" +
-                        "9 - 56789ABCDEFGHIJKLMN\n" +
-                        "10 - 6789ABCDEFGHIJKLMN\n" +
-                        "11 - 6789ABCDEFGHIJKLMN\n" +
-                        "12 - 6789ABCDEFGHIJKLMN\n" +
-                        "13 - 6789ABCDEFGHIJKLMN\n" +
-                        "14 - 6789ABCDEFGHIJKLMN\n" +
-                        "15 - 6789ABCDEFGHIJKLMN\n" +
-                        "16 - 6789ABCDEFGHIJKLMN" )
+                            "$raw\n")
                 null
             }
         }
@@ -173,6 +160,9 @@ object LinkFlow {
         finalUrl: String,
         explicitContextText: String?
     ) {
+
+        Toast.makeText(context, "Sneaky checking link", Toast.LENGTH_SHORT).show()
+
         HistoryStore.markRemote(context, runId, RemoteStatus.RUNNING, null)
 
         SneakyLinkyApp.appScope.launch {

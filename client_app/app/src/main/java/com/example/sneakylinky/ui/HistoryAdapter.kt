@@ -228,7 +228,7 @@ class HistoryAdapter(
         // Option A: using copy (Triple is a data class)
         return if (isReported) {
             base.copy(
-                second = android.R.color.holo_blue_light,
+                second = R.color.backgroundPurple,
                 third = "User reported"
             )
         } else {
