@@ -66,6 +66,7 @@ object LinkFlow {
         val url = urlEvaluation.canon?.originalUrl
         if (url == null) {
             Log.d(TAG, "urlEvaluation failed to parse")
+            rememberUrl(context, finalUrl)
             return
         } else {
             Log.d(
@@ -83,6 +84,7 @@ object LinkFlow {
         if (urlEvaluation.verdict == Verdict.BLOCK){
             Log.d(TAG, "BLOCK → markLocal(SUSPICIOUS) + toast")
             HistoryStore.markLocal(context, runId, LocalCheck.SUSPICIOUS, null, null)
+            rememberUrl(context, url)
             val text2 = joinWithBlankLines(urlEvaluation.reasonDetails.map { it.message })
             UiNotices.showWarning(context, url, text2)
             //UiNotices.showWarning(context, finalUrl, urlEvaluation.reasonDetails[0].message) // todo: go over all reasons
@@ -97,12 +99,9 @@ object LinkFlow {
             openSelectedBrowserAndMarkOpened(context, runId, url)
             Log.d(TAG, "opened in browser & marked opened")
 
-            // Kick off remote scans (URL + message context) and show a single summary toast
-            Log.d(TAG, "launch remote scans (parallel)")
-            launchRemoteScansCombined(context, runId, url, contextText)
-
 
             // Per your rule: if both are true → skip remote scans entirely
+            // Kick off remote scans (URL + message context) and show a single summary toast
             if (doUrl || doMsg) {
                 Log.d(TAG, "launch remote scans (parallel)")
                 launchRemoteScansCombined(context, runId, finalUrl, contextText)

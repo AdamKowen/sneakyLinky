@@ -209,6 +209,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+
         // Update UI with the last link opened (LinkFlow sets this)
         lastOpenedLink?.let { cardAdapter?.updateCard1Link(it) }
 
