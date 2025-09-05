@@ -227,36 +227,41 @@ object LinkFlow {
         explicitContextText: String?
     ) {
 
-        Toast.makeText(context, "Sneaky checking link", Toast.LENGTH_SHORT).show()
+        val ctxMsg = chooseContextMessage(explicitContextText)
+        val wantUrl = FeatureFlags.remoteLinkChecks(context)
+        val wantMsg = FeatureFlags.remoteMessageChecks(context)
+
+        val runUrl = wantUrl
+        val runMsg = wantMsg && ctxMsg != null
+
+        if (!runUrl && !runMsg) {
+            HistoryStore.markRemote(context, runId, RemoteStatus.SAFE, null)
+            remoteBreakdowns[runId] = RemoteBreakdown.NONE
+            return
+        }
+
+        val startText = when {
+            runUrl && runMsg -> "Checking link + message…"
+            runUrl           -> "Checking link…"
+            else             -> "Checking message…"
+        }
+        UiNotices.safeToast(context, startText)
 
         HistoryStore.markRemote(context, runId, RemoteStatus.RUNNING, null)
 
         SneakyLinkyApp.appScope.launch {
-            val ctxMsg = chooseContextMessage(explicitContextText)
-
-
-            // Check toggles for which remote checks to run
-            val doUrl = FeatureFlags.remoteLinkChecks(context)
-            val doMsg = FeatureFlags.remoteMessageChecks(context) && (ctxMsg != null)
-
-
-            fun fmt(s: Float?): String = s?.let { String.format("%.2f", it) } ?: "n/a"
-
             try {
                 coroutineScope {
-
-                    val urlDef = if (doUrl)
+                    val urlDef = if (runUrl)
                         async(Dispatchers.IO) { runCatching { UrlAnalyzer.analyze(finalUrl) } }
                     else null
 
-
-                    val msgDef = if (doMsg)
+                    val msgDef = if (runMsg)
                         async(Dispatchers.IO) { runCatching { MessageAnalyzer.analyze(ctxMsg!!) } }
                     else null
 
                     val urlRes  = urlDef?.await()
                     val msgRes  = msgDef?.await()
-                    val hasMsg  = ctxMsg != null
 
                     val urlOk    = urlRes?.isSuccess == true
                     val urlErr   = urlRes?.isFailure == true
@@ -268,9 +273,9 @@ object LinkFlow {
                     val msgScore = msgRes?.getOrNull()?.phishingScore
                     val msgRisk  = (msgScore ?: 0f) >= 0.5f
 
-                    // Fail = (ran and got risk) OR (ran and got error). If not run → not a fail.
-                    val urlFail = doUrl && ((urlOk && urlRisk) || urlErr)
-                    val msgFail = doMsg && ((msgOk && msgRisk) || msgErr)
+                    // Fail רק אם הבדיקה רצה
+                    val urlFail = runUrl && ((urlOk && urlRisk) || urlErr)
+                    val msgFail = runMsg && ((msgOk && msgRisk) || msgErr)
 
                     val breakdown = when {
                         urlFail && msgFail -> RemoteBreakdown.BOTH_FAIL
@@ -289,12 +294,11 @@ object LinkFlow {
                     }
                     HistoryStore.markRemote(context, runId, combinedStatus, combinedScore)
 
-
                     val toastText = buildString {
                         append("URL: ")
                         append(
                             when {
-                                !doUrl          -> "skipped"
+                                !runUrl          -> "skipped"
                                 urlOk && urlRisk -> "⚠️ suspicious"
                                 urlOk            -> "✅ safe"
                                 urlErr           -> "❌ error"
@@ -304,7 +308,7 @@ object LinkFlow {
                         append(" • Message: ")
                         append(
                             when {
-                                !doMsg          -> "skipped"
+                                !runMsg          -> "skipped"
                                 msgOk && msgRisk -> "⚠️ suspicious"
                                 msgOk            -> "✅ safe"
                                 msgErr           -> "❌ error"
@@ -312,11 +316,10 @@ object LinkFlow {
                             }
                         )
                     }
-
                     UiNotices.safeToast(context, toastText)
                 }
             } catch (_: Throwable) {
-                remoteBreakdowns[runId] = RemoteBreakdown.BOTH_FAIL // conservative fallback
+                remoteBreakdowns[runId] = RemoteBreakdown.BOTH_FAIL // שמרני
                 HistoryStore.markRemote(context, runId, RemoteStatus.ERROR, null)
                 UiNotices.safeToast(context, "Remote scan error")
             }
