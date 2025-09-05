@@ -32,6 +32,15 @@ object LinkChecker {
     /** Default limit for maximum redirects to follow manually */
     private const val DEFAULT_REDIRECT_LIMIT = 5
 
+
+    /** Smart timeouts (tweak as you like)*/
+    private const val OVERALL_BUDGET_MS   = 10000  // total time budget for the whole chain
+    private const val PER_HOP_TIMEOUT_MS  = 7500  // max time allotted for a single hop
+    private const val MIN_REMAINING_MS    = 1000   // minimum remaining budget to attempt another hop
+
+
+
+
     /** Internal HTTP client configured to *not* follow redirects automatically. */
     internal val client: OkHttpClient = OkHttpClient.Builder()
         .followRedirects(false)
@@ -43,11 +52,13 @@ object LinkChecker {
      */
     sealed class UrlResolutionResult {
 
+
+
         data class Success(
             val originalUrl: String,
             val finalUrl: String,
             val redirectCount: Int,
-            val finalStatusCode: Int
+            val finalStatusCode: Int,
         ) : UrlResolutionResult()
 
         data class Failure(
@@ -67,7 +78,9 @@ object LinkChecker {
                 "Redirect response missing or containing invalid Location header"
             ),
             NETWORK_EXCEPTION(5, "Network error, timeout or request cancelled"),
-            UNKNOWN(6, "An unknown error occurred")
+            UNKNOWN(6, "An unknown error occurred"),
+
+            SLOW_REDIRECT(7, "Redirect chain took too long")
         }
     }
 
@@ -82,6 +95,10 @@ object LinkChecker {
     fun resolveUrl(url: String, maxRedirects: Int = DEFAULT_REDIRECT_LIMIT): UrlResolutionResult {
 
         var httpsUpgradeAttempted = false
+
+        // Smart deadline for the whole chain
+        val startedNs = System.nanoTime()
+        val deadlineNs = startedNs + OVERALL_BUDGET_MS * 1_000_000L
 
         // --- normalize scheme --------------------------------------------------------
         var sanitized = url.trim()
@@ -110,64 +127,83 @@ object LinkChecker {
         val visited = mutableSetOf<HttpUrl>()
         var hops = 0
 
+
+
         while (hops <= maxRedirects) {
-            Log.d(TAG, "HEAD request → hop=$hops url='$current' scheme='${current.scheme()}'")
+            // Compute remaining budget and per-hop timeout
+            val nowNs = System.nanoTime()
+            val remainingMs = ((deadlineNs - nowNs) / 1_000_000L).coerceAtLeast(0L)
+            if (remainingMs < MIN_REMAINING_MS) {
+                Log.w(TAG, "resolve timeout: remaining=${remainingMs}ms hops=$hops")
+                return UrlResolutionResult.Failure(sanitized, UrlResolutionResult.ErrorCause.SLOW_REDIRECT, hops)
+            }
+            val hopTimeoutMs = kotlin.math.min(PER_HOP_TIMEOUT_MS.toLong(), remainingMs).toInt()
+
+            Log.d(TAG, "HEAD request → hop=$hops url='$current' remaining=${remainingMs}ms hopTimeout=${hopTimeoutMs}ms")
+
             try {
-                client.newCall(buildHeadRequest(current)).execute().use { res ->
+
+                val call = client.newCall(buildHeadRequest(current))
+                // Per-hop call timeout bounded by remaining budget
+                call.timeout().timeout(hopTimeoutMs.toLong(), java.util.concurrent.TimeUnit.MILLISECONDS)
+
+
+                // --- measure hop elapsed time ---
+                val hopStart = System.nanoTime()
+                call.execute().use { res ->
+
                     val code = res.code()
                     val loc  = res.header("Location")
-                    Log.d(TAG,"HEAD response ← hop=$hops code=$code" + (if (loc != null) " location='${loc.take(200)}'" else ""))
+                    Log.d(TAG, "HEAD response ← hop=$hops code=$code" + (if (loc != null) " location='${loc.take(200)}'" else ""))
 
                     when {
                         res.code() in 300..399 -> {
                             val next = nextHop(res)
-
                             if (next == null) {
                                 Log.w(TAG, "redirect without valid Location → UNRECOVERABLE_LOCATION (hop=$hops)")
                                 return UrlResolutionResult.Failure(
-                                    sanitized,
-                                    UrlResolutionResult.ErrorCause.UNRECOVERABLE_LOCATION,
-                                    hops
+                                    sanitized, UrlResolutionResult.ErrorCause.UNRECOVERABLE_LOCATION, hops
                                 )
                             }
-
                             if (!visited.add(next)) {
                                 Log.w(TAG, "loop detected at '$next' (hop=$hops) → LOOP_DETECTED")
                                 return UrlResolutionResult.Failure(
-                                    sanitized,
-                                    UrlResolutionResult.ErrorCause.LOOP_DETECTED,
-                                    hops
+                                    sanitized, UrlResolutionResult.ErrorCause.LOOP_DETECTED, hops
                                 )
                             }
                             Log.d(TAG, "follow redirect: '$current' → '$next'")
                             current = next
                             hops++
                         }
-
                         else -> {
-                            Log.d(TAG,"final hop reached: hops=$hops final='$current' status=$code")
+                            Log.d(TAG, "final hop reached: hops=$hops final='$current' status=$code")
                             return UrlResolutionResult.Success(
-                                sanitized,
-                                current.toString(),
-                                hops,
-                                code
+                                sanitized, current.toString(), hops, code
                             )
                         }
                     }
                 }
             } catch (e: IOException) {
 
-                //allow SSL hostname mismatch to pass-through ---
                 if (isHostnameMismatch(e)) {
                     android.util.Log.w(TAG, "SSL hostname mismatch for $current — allowing resolve to pass-through", e)
                     return UrlResolutionResult.Success(
                         originalUrl = sanitized,
                         finalUrl = current.toString(),
                         redirectCount = hops,
-                        finalStatusCode = 0
+                        finalStatusCode = 0,
                     )
                 }
 
+                // NEW: treat explicit timeouts as SLOW_REDIRECT for clearer UX
+                if (isTimeout(e)) {
+                    Log.w(TAG, "timeout on hop=$hops url='$current' msg=${e.message}")
+                    return UrlResolutionResult.Failure(
+                        sanitized, UrlResolutionResult.ErrorCause.SLOW_REDIRECT, hops
+                    )
+                }
+
+                // HTTPS upgrade on cleartext block (unchanged)
                 val isCleartextBlocked =
                     (e is java.net.UnknownServiceException) &&
                             (e.message?.contains("CLEARTEXT", ignoreCase = true) == true)
@@ -183,17 +219,16 @@ object LinkChecker {
                         sanitized = sanitized.replaceFirst(Regex("^http://", RegexOption.IGNORE_CASE), "https://")
                         current = httpsUrl
                         Log.d(TAG, "HTTPS upgrade success → retry same hop with '$current'")
-                        // retry same hop over HTTPS (do NOT increment hops)
                         continue
-                    }else {
+                    } else {
                         Log.e(TAG, "HTTPS upgrade failed to build new URL for '$current'")
                     }
                 }
+
                 Log.w(TAG, "IOException on hop=$hops url='$current': ${e.message}", e)
                 return UrlResolutionResult.Failure(
                     sanitized, UrlResolutionResult.ErrorCause.NETWORK_EXCEPTION, hops
                 )
-
             } catch (e: Exception) {
                 Log.e(TAG, "Unexpected exception on hop=$hops url='$current': ${e.message}", e)
                 return UrlResolutionResult.Failure(
@@ -201,10 +236,9 @@ object LinkChecker {
                 )
             }
         }
+
         Log.w(TAG, "exceeded redirect limit ($maxRedirects) for start='$sanitized' at hop=$hops")
-        return UrlResolutionResult.Failure(
-            sanitized, UrlResolutionResult.ErrorCause.EXCEEDED_REDIRECT_LIMIT, hops
-        )
+        return UrlResolutionResult.Failure(sanitized, UrlResolutionResult.ErrorCause.EXCEEDED_REDIRECT_LIMIT, hops)
     }
 
     // Helper to detect hostname mismatch across OkHttp/JDK variants
@@ -213,6 +247,13 @@ object LinkChecker {
         if (e is SSLHandshakeException && e.cause is SSLPeerUnverifiedException) return true
         val msg = e.message?.lowercase().orEmpty()
         return msg.contains("hostname") && (msg.contains("not verified") || msg.contains("mismatch"))
+    }
+
+
+    private fun isTimeout(e: Throwable): Boolean {
+        return e is java.net.SocketTimeoutException ||
+                e is java.io.InterruptedIOException ||
+                (e.message?.contains("timeout", ignoreCase = true) == true)
     }
 
 

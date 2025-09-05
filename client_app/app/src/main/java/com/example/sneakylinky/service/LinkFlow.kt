@@ -28,6 +28,8 @@ import com.example.sneakylinky.ui.flow.FeatureFlags
 
 object LinkFlow {
 
+    @Volatile private var lastResolveBlocked: Boolean = false
+
     enum class RemoteBreakdown {
         NONE,          // no remote failure (both passed or message skipped)
         URL_FAIL,      // URL check failed (risk or error)
@@ -54,10 +56,11 @@ object LinkFlow {
         Log.d(TAG, "runId=$runId created")
 
         var finalUrl = resolveFinalOrWarn(context, runId, raw)
+        if (lastResolveBlocked) return   // ← hard stop on 6s budget exhaustion
         if (finalUrl == null) {
             Log.d(TAG, "resolve failed, continuing with raw")
             finalUrl = raw
-        }else{
+        } else {
             Log.d(TAG, "resolved finalUrl=$finalUrl")
         }
 
@@ -151,16 +154,45 @@ object LinkFlow {
     }
 
 
-    private suspend fun resolveFinalOrWarn(context: Context, runId: Long, raw: String):
-            String? = withContext(Dispatchers.IO) {
-        when (val res = LinkChecker.resolveUrl(raw)) {
-            is LinkChecker.UrlResolutionResult.Success -> res.finalUrl
-            else -> {
+    private suspend fun resolveFinalOrWarn(
+        context: Context,
+        runId: Long,
+        raw: String
+    ): String? = kotlinx.coroutines.coroutineScope {
+        lastResolveBlocked = false
+
+        // staged, user-friendly progress toasts while resolve runs in IO
+        val hintJob = launch {
+            try {
+                kotlinx.coroutines.delay(1500) // 1.5s
+                UiNotices.safeToast(context, "taking longer than usual…", 2000)
+                kotlinx.coroutines.delay(3500) // +1.5s = 3s total
+                UiNotices.safeToast(context, "still checking…",2500)
+            } catch (_: Throwable) {
+                // cancelled → do nothing
+            }
+        }
+
+        // run the blocking resolve on IO while hints tick on the main scope
+        val res = withContext(Dispatchers.IO) { LinkChecker.resolveUrl(raw) }
+
+        // stop any pending hints immediately when resolve completes
+        hintJob.cancel()
+
+        when (res) {
+            is LinkChecker.UrlResolutionResult.Success -> {
+                // No block here: we only showed hints, continue the flow.
+                res.finalUrl
+            }
+            is LinkChecker.UrlResolutionResult.Failure -> {
+                // Keep your existing fallback + optional hard block on slow chain
                 rememberUrl(context, raw)
                 HistoryStore.markLocal(context, runId, LocalCheck.ERROR, null, null)
-//                UiNotices.showWarning(context, raw,
-//                    "Failed to resolve the link: " +
-//                            "$raw\n")
+
+                if (res.error == LinkChecker.UrlResolutionResult.ErrorCause.SLOW_REDIRECT) {
+                    UiNotices.showWarning(context, raw, "The link took too long to respond and was blocked for your safety. Try again later.")
+                    lastResolveBlocked = true
+                }
                 null
             }
         }

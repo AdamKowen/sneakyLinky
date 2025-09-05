@@ -15,15 +15,22 @@ object UiNotices {
     private val mainHandler = Handler(Looper.getMainLooper())
 
     // Always post Toast to the main thread
-    fun safeToast(context: Context, msg: String) {
-        val ok = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        } else true
+    @JvmStatic
+    fun safeToast(context: Context, msg: CharSequence, customDurationMs: Long? = null) {
+        val appCtx = context.applicationContext
+        val looper = android.os.Looper.getMainLooper()
+        val handler = android.os.Handler(looper)
 
-        if (!ok) return
+        // Always post to main thread
+        handler.post {
+            // Use LONG so we have time to cancel early if needed
+            val toast = android.widget.Toast.makeText(appCtx, msg, android.widget.Toast.LENGTH_LONG)
+            toast.show()
 
-        mainHandler.post {
-            Toast.makeText(context.applicationContext, msg, Toast.LENGTH_LONG).show()
+            if (customDurationMs != null) {
+                val cutoff = customDurationMs.coerceAtLeast(200L) // avoid "blink"
+                handler.postDelayed({ toast.cancel() }, cutoff)
+            }
         }
     }
 
