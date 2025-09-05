@@ -122,13 +122,11 @@ fun populateTestData() {
         val wlDao = db.whitelistDao()
         val blDao = db.blacklistDao()
 
-        // Clear any existing data (so you can re-run without duplicates)
-        wlDao.clearAll()
-        blDao.clearAll()
+
 
         // Seed a (truncated) whitelist. Expand as you like.
         val entries = listOf(
-            "bankhapoalim.co.il/","ynetnews.com",
+            "israelhayom.com","bankhapoalim.co.il/","ynetnews.com",
             "adobe.com","aliexpress.com","amazon.co.jp","amazon.co.uk","amazon.com",
             "amazon.de","amazon.in","apple.com","baidu.com","bbc.co.uk","bbc.com",
             "bilibili.com","bing.com","booking.com","canva.com","chatgpt.com",
