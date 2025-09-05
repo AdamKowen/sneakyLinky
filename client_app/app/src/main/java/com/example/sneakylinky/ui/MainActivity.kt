@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
         requestNotificationPermissionIfNeeded()
 
         // TEMP – seed local DB/test tables if your helper requires it
-        //populateTestData()
+        populateTestData()
 
         // Set up cards; "Analyze" button now delegates to LinkFlow
         cardAdapter = CardAdapter(
