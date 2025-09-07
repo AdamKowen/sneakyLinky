@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.content.ContextCompat.startActivity
 import com.example.sneakylinky.R
 import com.example.sneakylinky.service.hotsetdatabase.HotsetSyncScheduler
+import com.example.sneakylinky.util.UiNotices
 import com.example.sneakylinky.util.getSelectedBrowser
 
 
@@ -48,7 +49,7 @@ class FlowCardBinder(
         // Update DB button (unchanged)
         btnUpdateDb?.setOnClickListener {
             HotsetSyncScheduler.runNow(activity)
-            Toast.makeText(activity, "Updating local database…", Toast.LENGTH_SHORT).show()
+            UiNotices.safeToast(activity, "Updating local database…")
         }
 
         // Open browser picker card
@@ -72,7 +73,7 @@ class FlowCardBinder(
                     openAccessibilitySettings()
                     forceSwitchMsg(false)
                     prefs.edit().putBoolean(KEY_REMOTE_MSGS, false).apply()
-                    Toast.makeText(activity, "Grant Accessibility permission to enable message checks", Toast.LENGTH_SHORT).show()
+                    UiNotices.safeToast(activity, "Grant Accessibility permission to enable message checks", 2500)
                 } else {
                     prefs.edit().putBoolean(KEY_REMOTE_MSGS, true).apply()
                 }
@@ -138,7 +139,7 @@ class FlowCardBinder(
         } else {
             "Go to phone settings to make SneakyLinky your default browser"
         }
-        Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
+        UiNotices.safeToast(activity, message)
     }
 
     private fun isDefaultBrowser(context: Context): Boolean {

@@ -246,11 +246,11 @@ class MainActivity : AppCompatActivity() {
                     UiNotices.safeToast(this@MainActivity, "Text appears safe.")
                 }
             }.onFailure { e ->
-                Toast.makeText(
+                UiNotices.safeToast(
                     this@MainActivity,
                     "Error analyzing text: ${e.message}",
-                    Toast.LENGTH_LONG
-                ).show()
+                    2500
+                )
             }
         }
     }

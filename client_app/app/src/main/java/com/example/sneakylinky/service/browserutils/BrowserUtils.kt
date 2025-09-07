@@ -35,7 +35,7 @@ fun launchInSelectedBrowser(context: Context, url: String) {
             context.overridePendingTransition(0, 0)
         }
     } catch (e: ActivityNotFoundException) {
-        Toast.makeText(context, "Cannot open link", Toast.LENGTH_SHORT).show()
+        UiNotices.safeToast(context, "Cannot open link", 2500)
     }
 }
 

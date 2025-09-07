@@ -254,7 +254,7 @@ class CardAdapter(private val context: Context,
                     saveSelectedBrowser(ctx, pkgName)
                     // Notify the flow card to refresh its browser icon
                     notifyItemChanged(2) // LINK_FLOW_CARD index
-                    Toast.makeText(ctx, "Selected Browser: ${browser.loadLabel(ctx.packageManager)}", Toast.LENGTH_SHORT).show()
+                    UiNotices.safeToast(ctx, "Selected Browser: ${browser.loadLabel(ctx.packageManager)}",)
 
                     // Optional: gently bring the picked item into place
                     rv.post {
@@ -296,7 +296,7 @@ class CardAdapter(private val context: Context,
                         // switch to Main for UI + Toast
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                             refreshHistoryInto(holder)
-                            android.widget.Toast.makeText(ctx, "History cleared", android.widget.Toast.LENGTH_SHORT).show()
+                            UiNotices.safeToast(ctx, "History cleared", 2500)
                         }
                     }
                 }
@@ -337,16 +337,6 @@ class CardAdapter(private val context: Context,
     }
 
     class FlowCardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-//        init {
-//            itemView.findViewById<View?>(R.id.btnUpdateDbNow)?.setOnClickListener {
-//                HotsetSyncScheduler.runNow(itemView.context)
-//                android.widget.Toast.makeText(
-//                    itemView.context,
-//                    "Updating local database…",
-//                    android.widget.Toast.LENGTH_SHORT
-//                ).show()
-//            }
-//        }
 
         var binder: com.example.sneakylinky.ui.flow.FlowCardBinder? = null
     }
