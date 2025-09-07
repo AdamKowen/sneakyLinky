@@ -99,7 +99,26 @@ object LinkFlow {
             Log.d(TAG, "BLOCK → markLocal(SUSPICIOUS) + showWarning (runId=$runId)")
             HistoryStore.markLocal(context, runId, LocalCheck.SUSPICIOUS, null, null)
             rememberUrl(context, url)
-            val text2 = joinWithBlankLines(urlEvaluation.reasonDetails.map { it.message })
+            // Build reason text: prefer provided reasons; fallback only if empty
+            val msgs = urlEvaluation.reasonDetails
+                .map { it.message.trim() }
+                .filter { it.isNotEmpty() }
+                .distinct()
+
+            val text2 = if (msgs.isNotEmpty()) {
+                // Use the exact formatter that already works well for you
+                joinWithBlankLines(msgs)
+            } else {
+                // Minimal, source-aware fallback to avoid empty screens
+                when (urlEvaluation.source) {
+                    DecisionSource.BLACKLIST ->
+                        "Blocked: domain is on your blacklist (${urlEvaluation.canon?.hostAscii ?: "this domain"})."
+                    DecisionSource.CANON_PARSE_ERROR ->
+                        "Blocked: invalid or unparsable URL."
+                    else ->
+                        "Blocked for your safety."
+                }
+            }
             Log.d(TAG, "showWarning url='${short(url)}' reason='${short(text2)}' (runId=$runId)")
             UiNotices.showWarning(context, url, text2)
             return
