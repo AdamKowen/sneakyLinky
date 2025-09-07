@@ -29,6 +29,7 @@ import com.example.sneakylinky.service.report.RemoteStatus
 import com.example.sneakylinky.service.report.ReportDispatcher
 import com.example.sneakylinky.service.report.ReportSendState
 import com.example.sneakylinky.service.report.UserVerdict
+import com.example.sneakylinky.util.UiNotices
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -129,7 +130,7 @@ class HistoryAdapter(
                 com.example.sneakylinky.SneakyLinkyApp.appScope.launch {
                     // 1) toast "sending..." on Main
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        Toast.makeText(ctx.applicationContext, "Sending...", Toast.LENGTH_SHORT).show()
+                        UiNotices.safeToast(ctx.applicationContext, "Sending...", 2500)
                     }
 
                     // 2) ensure row exists
@@ -159,7 +160,7 @@ class HistoryAdapter(
                             com.example.sneakylinky.service.report.ReportSendState.SENDING    -> "sending..."
                             else -> "Unknown status"
                         }
-                        Toast.makeText(ctx.applicationContext, msg, Toast.LENGTH_SHORT).show()
+                        UiNotices.safeToast(ctx.applicationContext, msg)
                     }
 
 

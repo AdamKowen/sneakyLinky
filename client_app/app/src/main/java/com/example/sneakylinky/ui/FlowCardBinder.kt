@@ -1,4 +1,3 @@
-
 package com.example.sneakylinky.ui.flow
 
 import android.app.Activity
@@ -19,8 +18,12 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.content.ContextCompat.startActivity
+import androidx.lifecycle.Observer
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.example.sneakylinky.R
 import com.example.sneakylinky.service.hotsetdatabase.HotsetSyncScheduler
+import com.example.sneakylinky.util.UiNotices
 import com.example.sneakylinky.util.getSelectedBrowser
 
 
@@ -44,12 +47,76 @@ class FlowCardBinder(
     // Reentrancy guard for listeners
     private var updatingUi = false
 
+    private val wm by lazy { WorkManager.getInstance(activity) }
+    private var hotsetListObserver: Observer<List<WorkInfo>>? = null
+    private var hotsetLiveData: androidx.lifecycle.LiveData<List<androidx.work.WorkInfo>>? = null
+    private var lastHandledId: java.util.UUID? = null
+    private var lastHandledState: androidx.work.WorkInfo.State? = null
+
+
     init {
         // Update DB button (unchanged)
         btnUpdateDb?.setOnClickListener {
+            setBtnUpdating(true)           // handles isEnabled/alpha; no need for extra isEnabled=false
             HotsetSyncScheduler.runNow(activity)
-            Toast.makeText(activity, "Updating local database…", Toast.LENGTH_SHORT).show()
+
+            // Detach old observer (from the exact LiveData instance we attached to)
+            detachHotsetObserver()
+
+            // Attach to the current LiveData once
+            val live = androidx.work.WorkManager.getInstance(activity)
+                .getWorkInfosForUniqueWorkLiveData("hotset-manual-sync")
+            hotsetLiveData = live
+
+            val obs = androidx.lifecycle.Observer<List<androidx.work.WorkInfo>> { infos ->
+                if (infos.isNullOrEmpty()) return@Observer
+
+                // Pick the most relevant WorkInfo (latest attempt, then UUID tie-break)
+                val info = infos.maxWithOrNull(
+                    compareBy<androidx.work.WorkInfo> { it.runAttemptCount }
+                        .thenBy { it.id.mostSignificantBits }
+                ) ?: return@Observer
+
+                // Drop duplicate emissions of the same (id,state)
+                if (lastHandledId == info.id && lastHandledState == info.state) return@Observer
+                lastHandledId = info.id
+                lastHandledState = info.state
+
+                // Only act on terminal states
+                if (!info.state.isFinished) return@Observer
+
+                val msg = when (info.state) {
+                    androidx.work.WorkInfo.State.SUCCEEDED -> {
+                        val status = info.outputData.getString("status") ?: "updated"
+                        when (status) {
+                            "up_to_date" -> "Database is in the latest version"
+                            "updated"    -> "Updated to the latest version successfully"
+                            else         -> "Unknown status: $status"
+                        }
+                    }
+                    androidx.work.WorkInfo.State.FAILED -> {
+                        val err = info.outputData.getString("error") ?: "unknown error"
+                        "failed: $err"
+                    }
+                    androidx.work.WorkInfo.State.CANCELLED -> "update terminated"
+                    else -> return@Observer
+                }
+
+                UiNotices.safeToast(activity, msg, 2500)
+                setBtnUpdating(false)
+                detachHotsetObserver() // stop listening after terminal state
+            }
+
+            hotsetListObserver = obs
+            // Prefer lifecycle-aware observe; falls back to observeForever if needed
+            if (activity is androidx.lifecycle.LifecycleOwner) {
+                live.observe(activity, obs)
+            } else {
+                live.observeForever(obs)
+            }
         }
+
+
 
         // Open browser picker card
         btnChosenBrowser?.setOnClickListener { openBrowserPicker() }
@@ -72,7 +139,7 @@ class FlowCardBinder(
                     openAccessibilitySettings()
                     forceSwitchMsg(false)
                     prefs.edit().putBoolean(KEY_REMOTE_MSGS, false).apply()
-                    Toast.makeText(activity, "Grant Accessibility permission to enable message checks", Toast.LENGTH_SHORT).show()
+                    UiNotices.safeToast(activity, "Grant Accessibility permission to enable message checks", 2500)
                 } else {
                     prefs.edit().putBoolean(KEY_REMOTE_MSGS, true).apply()
                 }
@@ -138,7 +205,7 @@ class FlowCardBinder(
         } else {
             "Go to phone settings to make SneakyLinky your default browser"
         }
-        Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
+        UiNotices.safeToast(activity, message)
     }
 
     private fun isDefaultBrowser(context: Context): Boolean {
@@ -159,6 +226,42 @@ class FlowCardBinder(
         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
         activity.startActivity(intent)
     }
+
+
+    private fun cleanupHotsetObserver() {
+        val live = WorkManager.getInstance(activity)
+            .getWorkInfosForUniqueWorkLiveData("hotset-manual-sync")
+        hotsetListObserver?.let { live.removeObserver(it) }
+        hotsetListObserver = null
+        btnUpdateDb?.isEnabled = true
+    }
+
+    private fun setBtnUpdating(isUpdating: Boolean) {
+        val btn = btnUpdateDb ?: return
+        if (isUpdating) {
+            btn.isEnabled = false
+            btn.isClickable = false
+            btn.alpha = 0.5f    // visually dim when disabled
+        } else {
+            btn.isEnabled = true
+            btn.isClickable = true
+            btn.alpha = 1.0f    // restore
+        }
+    }
+
+
+    // comments in English only
+    private fun detachHotsetObserver() {
+        hotsetListObserver?.let { obs ->
+            hotsetLiveData?.removeObserver(obs)
+        }
+        hotsetLiveData = null
+        hotsetListObserver = null
+        lastHandledId = null
+        lastHandledState = null
+    }
+
+
 
     companion object {
         private const val PREFS_NAME = "sneaky_linky_prefs"
@@ -188,8 +291,11 @@ class FlowCardBinder(
             }
             return false
         }
+
     }
 }
+
+
 
 /**
  * Global feature flags (simple getters for "if" checks).

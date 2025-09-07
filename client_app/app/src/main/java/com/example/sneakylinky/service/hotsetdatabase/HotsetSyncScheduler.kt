@@ -9,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Constraints
+import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 
 object HotsetSyncScheduler {
@@ -32,6 +33,7 @@ object HotsetSyncScheduler {
     fun runNow(context: Context) {
         val once = OneTimeWorkRequestBuilder<HotsetSyncWorker>()
             .setConstraints(net)
+            .setInputData(workDataOf("manual" to true)) // flag manual trigger
             .build()
         WorkManager.getInstance(context).enqueueUniqueWork(
             "hotset-manual-sync",
@@ -39,4 +41,7 @@ object HotsetSyncScheduler {
             once
         )
     }
+
+
+
 }

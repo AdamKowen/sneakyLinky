@@ -7,6 +7,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.sneakylinky.R
+import com.example.sneakylinky.util.UiNotices
 import com.example.sneakylinky.util.launchInSelectedBrowser
 
 class LinkWarningActivity : AppCompatActivity() {
@@ -29,11 +30,11 @@ class LinkWarningActivity : AppCompatActivity() {
 
         proceedButton.setOnClickListener {
             if (!checkBox.isChecked) {
-                Toast.makeText(
+                UiNotices.safeToast(
                     this,
                     "Please confirm that you understand the risks",
-                    Toast.LENGTH_SHORT
-                ).show()
+                    2500
+                )
             } else {
                 url?.let {
                     launchInSelectedBrowser(this@LinkWarningActivity, it)
