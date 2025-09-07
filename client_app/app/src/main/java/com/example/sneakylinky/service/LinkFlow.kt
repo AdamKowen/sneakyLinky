@@ -24,7 +24,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
-
+import com.example.sneakylinky.service.urlanalyzer.DecisionSource
 object LinkFlow {
 
     @Volatile private var lastResolveBlocked: Boolean = false
@@ -378,5 +378,30 @@ object LinkFlow {
         val prefs = context.getSharedPreferences("sneaky_linky_prefs", Context.MODE_PRIVATE)
         prefs.edit { putString("last_url", url) }
         Log.d(TAG, "rememberUrl set lastOpenedLink + prefs url='${short(url)}'")
+    }
+
+
+    private fun buildReasonText(e: com.example.sneakylinky.service.urlanalyzer.UrlEvaluation): String {
+        // Prefer explicit reason messages if present (heuristics usually provide them)
+        val msgs = e.reasonDetails.map { it.message }.filter { it.isNotBlank() }
+        if (msgs.isNotEmpty()) {
+            // Use existing wrapper to keep consistent wrapping/spacing
+            return packReasons(msgs)
+        }
+
+        // Fallbacks by decision source so we never show an empty screen
+        val host = e.canon?.hostAscii ?: "this domain"
+        return when (e.source) {
+            DecisionSource.BLACKLIST ->
+                "Blocked: domain is on your blacklist ($host)."
+            DecisionSource.CANON_PARSE_ERROR ->
+                "Blocked: invalid or unparsable URL."
+            DecisionSource.WHITELIST ->
+                // Shouldn’t happen with BLOCK, but safe default
+                "Blocked for your safety."
+            DecisionSource.HEURISTICS ->
+                // Heuristics without explicit reasons (rare) — generic text
+                "Blocked for your safety."
+        }
     }
 }
