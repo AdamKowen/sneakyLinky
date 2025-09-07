@@ -76,8 +76,8 @@ class FlowCardBinder(
                     WorkInfo.State.SUCCEEDED -> {
                         val status = info.outputData.getString("status") ?: "updated"
                         val msg = when (status) {
-                            "up_to_date" -> "Data base is in the latest version"
-                            "updated"    -> "Upaded to the latest version successfully"
+                            "up_to_date" -> "Database is in the latest version"
+                            "updated"    -> "Updated to the latest version successfully"
                             else         -> "Unknown status: $status"
                         }
                         UiNotices.safeToast(activity, msg, 2500)
