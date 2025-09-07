@@ -1,4 +1,3 @@
-
 package com.example.sneakylinky.ui.flow
 
 import android.app.Activity
@@ -19,6 +18,9 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.content.ContextCompat.startActivity
+import androidx.lifecycle.Observer
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.example.sneakylinky.R
 import com.example.sneakylinky.service.hotsetdatabase.HotsetSyncScheduler
 import com.example.sneakylinky.util.UiNotices
@@ -45,12 +47,63 @@ class FlowCardBinder(
     // Reentrancy guard for listeners
     private var updatingUi = false
 
+    private val wm by lazy { WorkManager.getInstance(activity) }
+    private var hotsetListObserver: Observer<List<WorkInfo>>? = null
+
     init {
         // Update DB button (unchanged)
         btnUpdateDb?.setOnClickListener {
+            setBtnUpdating(true)
+            btnUpdateDb?.isEnabled = false
             HotsetSyncScheduler.runNow(activity)
-            UiNotices.safeToast(activity, "Updating local database…")
+
+            val live = WorkManager.getInstance(activity)
+                .getWorkInfosForUniqueWorkLiveData("hotset-manual-sync")
+
+            // keep only one active observer
+            hotsetListObserver?.let { live.removeObserver(it) }
+
+            val obs = Observer<List<WorkInfo>> { infos ->
+                if (infos.isEmpty()) return@Observer
+
+                // FIX: use a comparator (no Pair) → compiler can infer Comparable
+                val info = infos.maxWithOrNull(
+                    compareBy<WorkInfo> { it.runAttemptCount }
+                        .thenBy { it.id.mostSignificantBits }
+                ) ?: return@Observer
+
+                when (info.state) {
+                    WorkInfo.State.SUCCEEDED -> {
+                        val status = info.outputData.getString("status") ?: "updated"
+                        val msg = when (status) {
+                            "up_to_date" -> "Data base is in the latest version"
+                            "updated"    -> "Upaded to the latest version successfully"
+                            else         -> "Unknown status: $status"
+                        }
+                        UiNotices.safeToast(activity, msg, 2500)
+                        setBtnUpdating(false)
+                        cleanupHotsetObserver()
+                    }
+                    WorkInfo.State.FAILED -> {
+                        val err = info.outputData.getString("error") ?: "unknown error"
+                        UiNotices.safeToast(activity, "failed: $err", 3000)
+                        setBtnUpdating(false)
+                        cleanupHotsetObserver()
+                    }
+                    WorkInfo.State.CANCELLED -> {
+                        UiNotices.safeToast(activity, "update terminated", 2500)
+                        setBtnUpdating(false)
+                        cleanupHotsetObserver()
+                    }
+                    else -> { /* ENQUEUED/RUNNING/BLOCKED → wait silently */ }
+                }
+            }
+
+            hotsetListObserver = obs
+            live.observeForever(obs)
         }
+
+
 
         // Open browser picker card
         btnChosenBrowser?.setOnClickListener { openBrowserPicker() }
@@ -161,6 +214,29 @@ class FlowCardBinder(
         activity.startActivity(intent)
     }
 
+
+    private fun cleanupHotsetObserver() {
+        val live = WorkManager.getInstance(activity)
+            .getWorkInfosForUniqueWorkLiveData("hotset-manual-sync")
+        hotsetListObserver?.let { live.removeObserver(it) }
+        hotsetListObserver = null
+        btnUpdateDb?.isEnabled = true
+    }
+
+    private fun setBtnUpdating(isUpdating: Boolean) {
+        val btn = btnUpdateDb ?: return
+        if (isUpdating) {
+            btn.isEnabled = false
+            btn.isClickable = false
+            btn.alpha = 0.5f    // visually dim when disabled
+        } else {
+            btn.isEnabled = true
+            btn.isClickable = true
+            btn.alpha = 1.0f    // restore
+        }
+    }
+
+
     companion object {
         private const val PREFS_NAME = "sneaky_linky_prefs"
         private const val KEY_REMOTE_LINKS = "remote_links_enabled"
@@ -189,8 +265,11 @@ class FlowCardBinder(
             }
             return false
         }
+
     }
 }
+
+
 
 /**
  * Global feature flags (simple getters for "if" checks).
