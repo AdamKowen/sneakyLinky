@@ -24,6 +24,8 @@ import com.example.sneakylinky.service.LinkFlow
 import com.example.sneakylinky.service.MyAccessibilityService
 import com.example.sneakylinky.service.RetrofitClient
 import com.example.sneakylinky.service.hotsetdatabase.HotsetSyncScheduler
+import com.example.sneakylinky.service.serveranalysis.MessageAnalyzer
+import com.example.sneakylinky.service.serveranalysis.MessageResult
 import com.example.sneakylinky.service.serveranalysis.UrlAnalyzer
 import com.example.sneakylinky.service.urlanalyzer.populateTestData
 import com.example.sneakylinky.util.UiNotices
@@ -234,22 +236,38 @@ class MainActivity : AppCompatActivity() {
 
     // Analyze free text (not necessarily a URL) – keep as a separate action
     private fun analyzeText(text: String) {
+        val trimmed = text.trim()
+
+        // Guardrails to avoid 400 and client-side exceptions
+        if (trimmed.isEmpty()) {
+            UiNotices.safeToast(this@MainActivity, "Please enter some text to analyze.", 2500)
+            return
+        }
+        if (trimmed.length > 4000) {
+            UiNotices.safeToast(this@MainActivity, "Text is too long (max 4000 characters).", 3000)
+            return
+        }
+
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching { UrlAnalyzer.analyze(text) }
+                runCatching { MessageAnalyzer.analyze(trimmed) }
             }
 
-            result.onSuccess { ai ->
-                if (ai.phishingScore >= 0.5f) {
-                    UiNotices.safeToast(this@MainActivity, "Potential malicious text detected. Proceed with caution.")
-                } else {
-                    UiNotices.safeToast(this@MainActivity, "Text appears safe.")
+            result.onSuccess { mr: MessageResult ->
+                val suspicious = mr.phishingScore >= 0.5f
+                val header = if (suspicious) "⚠️ Suspicious text" else "✅ Text appears safe"
+                val reasons = mr.suspicionReasons.joinToString(separator = "\n") { "- $it" }
+                val msg = buildString {
+                    append("$header (score=${"%.2f".format(mr.phishingScore)})")
+                    if (reasons.isNotBlank()) append("\n\n").append(reasons)
                 }
+                UiNotices.safeToast(this@MainActivity, msg, 3500)
             }.onFailure { e ->
+                // Show HTTP code when available (MessageAnalyzer throws with "HTTP <code> — <msg>")
                 UiNotices.safeToast(
                     this@MainActivity,
-                    "Error analyzing text: ${e.message}",
-                    2500
+                    "Error analyzing text: ${e.message ?: "Unknown error"}",
+                    3000
                 )
             }
         }
