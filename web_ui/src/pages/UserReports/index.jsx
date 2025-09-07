@@ -3,7 +3,7 @@ import "./userreports.css";
 import UserReportsGrid from "./components/UserReportsGrid";
 import UserReportCard from "./components/UserReportCard";
 import UserReportStatsCard from "./components/UserReportStatsCard";
-import { getUserReports } from "../../services/userReports";
+import { getUserReports , getUserReportsStats } from "../../services/userReports";
 
 export default function UserReports() {
     const [reports, setReports] = useState([]);
@@ -15,7 +15,8 @@ export default function UserReports() {
         const fetchReports = async () => {
             try {
                 setLoading(true);
-                const data = await getUserReports(10);
+                const statsData = await getUserReportsStats();
+                const data = await getUserReports(Number(statsData.unclassified));
                 setReports(data);
             } catch (err) {
                 console.error('Error fetching reports:', err);

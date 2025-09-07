@@ -15,6 +15,28 @@ router.head('/latest-version', async (req, res) => {
     }
 });
 
+router.post('/create-version', async (req, res) => {
+    const startTime = Date.now();
+    
+    logger.info('[DomainHotset] POST /create-version');
+    
+    try {
+        const newRecord = await service.createDomainHotsetVersion();
+        const elapsed = Date.now() - startTime;
+        
+        logger.info(`[DomainHotset] POST /create-version - New version ${newRecord.version} created - Response time: ${elapsed}ms`);
+        
+        res.status(201).json({ 
+            version: newRecord.version,
+            message: 'New version created successfully'
+        });
+    } catch (error) {
+        const elapsed = Date.now() - startTime;
+        logger.error(`[DomainHotset] POST /create-version - Error: ${error.message} - Response time: ${elapsed}ms`);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 router.get('/record/:version', async (req, res) => {
     const startTime = Date.now();
     const version = Number(req.params.version);
