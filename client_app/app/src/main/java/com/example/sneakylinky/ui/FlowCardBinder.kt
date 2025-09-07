@@ -49,58 +49,71 @@ class FlowCardBinder(
 
     private val wm by lazy { WorkManager.getInstance(activity) }
     private var hotsetListObserver: Observer<List<WorkInfo>>? = null
+    private var hotsetLiveData: androidx.lifecycle.LiveData<List<androidx.work.WorkInfo>>? = null
+    private var lastHandledId: java.util.UUID? = null
+    private var lastHandledState: androidx.work.WorkInfo.State? = null
+
 
     init {
         // Update DB button (unchanged)
         btnUpdateDb?.setOnClickListener {
-            setBtnUpdating(true)
-            btnUpdateDb?.isEnabled = false
+            setBtnUpdating(true)           // handles isEnabled/alpha; no need for extra isEnabled=false
             HotsetSyncScheduler.runNow(activity)
 
-            val live = WorkManager.getInstance(activity)
+            // Detach old observer (from the exact LiveData instance we attached to)
+            detachHotsetObserver()
+
+            // Attach to the current LiveData once
+            val live = androidx.work.WorkManager.getInstance(activity)
                 .getWorkInfosForUniqueWorkLiveData("hotset-manual-sync")
+            hotsetLiveData = live
 
-            // keep only one active observer
-            hotsetListObserver?.let { live.removeObserver(it) }
+            val obs = androidx.lifecycle.Observer<List<androidx.work.WorkInfo>> { infos ->
+                if (infos.isNullOrEmpty()) return@Observer
 
-            val obs = Observer<List<WorkInfo>> { infos ->
-                if (infos.isEmpty()) return@Observer
-
-                // FIX: use a comparator (no Pair) → compiler can infer Comparable
+                // Pick the most relevant WorkInfo (latest attempt, then UUID tie-break)
                 val info = infos.maxWithOrNull(
-                    compareBy<WorkInfo> { it.runAttemptCount }
+                    compareBy<androidx.work.WorkInfo> { it.runAttemptCount }
                         .thenBy { it.id.mostSignificantBits }
                 ) ?: return@Observer
 
-                when (info.state) {
-                    WorkInfo.State.SUCCEEDED -> {
+                // Drop duplicate emissions of the same (id,state)
+                if (lastHandledId == info.id && lastHandledState == info.state) return@Observer
+                lastHandledId = info.id
+                lastHandledState = info.state
+
+                // Only act on terminal states
+                if (!info.state.isFinished) return@Observer
+
+                val msg = when (info.state) {
+                    androidx.work.WorkInfo.State.SUCCEEDED -> {
                         val status = info.outputData.getString("status") ?: "updated"
-                        val msg = when (status) {
+                        when (status) {
                             "up_to_date" -> "Database is in the latest version"
                             "updated"    -> "Updated to the latest version successfully"
                             else         -> "Unknown status: $status"
                         }
-                        UiNotices.safeToast(activity, msg, 2500)
-                        setBtnUpdating(false)
-                        cleanupHotsetObserver()
                     }
-                    WorkInfo.State.FAILED -> {
+                    androidx.work.WorkInfo.State.FAILED -> {
                         val err = info.outputData.getString("error") ?: "unknown error"
-                        UiNotices.safeToast(activity, "failed: $err", 3000)
-                        setBtnUpdating(false)
-                        cleanupHotsetObserver()
+                        "failed: $err"
                     }
-                    WorkInfo.State.CANCELLED -> {
-                        UiNotices.safeToast(activity, "update terminated", 2500)
-                        setBtnUpdating(false)
-                        cleanupHotsetObserver()
-                    }
-                    else -> { /* ENQUEUED/RUNNING/BLOCKED → wait silently */ }
+                    androidx.work.WorkInfo.State.CANCELLED -> "update terminated"
+                    else -> return@Observer
                 }
+
+                UiNotices.safeToast(activity, msg, 2500)
+                setBtnUpdating(false)
+                detachHotsetObserver() // stop listening after terminal state
             }
 
             hotsetListObserver = obs
-            live.observeForever(obs)
+            // Prefer lifecycle-aware observe; falls back to observeForever if needed
+            if (activity is androidx.lifecycle.LifecycleOwner) {
+                live.observe(activity, obs)
+            } else {
+                live.observeForever(obs)
+            }
         }
 
 
@@ -235,6 +248,19 @@ class FlowCardBinder(
             btn.alpha = 1.0f    // restore
         }
     }
+
+
+    // comments in English only
+    private fun detachHotsetObserver() {
+        hotsetListObserver?.let { obs ->
+            hotsetLiveData?.removeObserver(obs)
+        }
+        hotsetLiveData = null
+        hotsetListObserver = null
+        lastHandledId = null
+        lastHandledState = null
+    }
+
 
 
     companion object {
