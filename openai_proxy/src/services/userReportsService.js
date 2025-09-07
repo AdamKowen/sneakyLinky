@@ -1,6 +1,7 @@
 const repo = require('../repositories/userReportsRepository');
 const validator = require('validator');
 
+
 function validateUUID(uuid) {
   if (!validator.isUUID(uuid + '')) {
     const e = new Error('Invalid UUID');
