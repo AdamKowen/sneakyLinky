@@ -1,9 +1,0 @@
-# 1. Navigate to the backend folder
-cd .\backend\
-
-# 2. Activate your virtual environment (Windows)
-.\sneaky-venv\Scripts\activate
-
-# 3. Generate the requirements.txt file from your active venv
-pip freeze > requirements.txt
-
