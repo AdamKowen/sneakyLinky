@@ -2,8 +2,11 @@
 Set SneakyLinky as the device’s default browser once—from then on, every link you tap is quickly vetted. If it looks risky, you’ll see a *clear warning* with *Proceed / Block*. If it’s fine, SneakyLinky instantly hands it off to your real browser (Chrome, etc.) so your flow stays smooth.
 
 ## Repo Map
+
 client_app/   — Android app (Kotlin)
+
 openai_proxy/ — App Server (Node/Express)
+
 web_ui/       — Admin Web (React/Vite)
 
 ---
