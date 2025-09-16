@@ -1,4 +1,0 @@
-cd /Users/adamkowen/Desktop/sneaky_linky/backend
-source sneaky-venv/bin/activate
-cd /Users/adamkowen/Desktop/sneaky_linky/backend/sneaky_backend
-python manage.py runserver
