@@ -6,13 +6,24 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.sneakylinky.service.LinkFlow
 import com.example.sneakylinky.service.MyAccessibilityService
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class LinkRelayActivity : AppCompatActivity() {
 
     private val TAG = "LinkRelay"
     private val SEP = " $$$ SEPERATOR! $$$ "
+
+
+    object MsgBus {
+        private val pipe = kotlinx.coroutines.flow.MutableSharedFlow<String>(replay = 0, extraBufferCapacity = 1)
+        fun push(text: String) { pipe.tryEmit(text) }
+        suspend fun awaitNext(timeoutMs: Long): String? =
+            withTimeoutOrNull(timeoutMs) { pipe.first() }
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -33,13 +44,20 @@ class LinkRelayActivity : AppCompatActivity() {
         Log.d(TAG, "joinedNull=${joined == null} selectedLen=${selectedMsg?.length}")
 
         // Push the selected message to the UI card (if available)
-        selectedMsg?.let { MyAccessibilityService.pushTextToUi(it) }
+        MyAccessibilityService.pushTextToUi(selectedMsg ?: "")
+        if (selectedMsg.isNullOrBlank()) {
+            com.example.sneakylinky.LinkContextCache.surroundingTxt = null
+            com.example.sneakylinky.LinkContextCache.lastLink = null
+        }
+        val cleaned = selectedMsg
+            ?.replace(Regex("[\\p{Cf}]"), "") // control/format chars (ZWJ, ZWNJ, RTL mark)
+            ?.trim()
 
         lifecycleScope.launch {
             LinkFlow.runLinkFlow(
                 context = this@LinkRelayActivity,
                 raw = raw,
-                contextText = selectedMsg // pass only the single matched message
+                contextText = cleaned?.takeIf { it.isNotBlank()} // pass only the single matched message
             )
             finishAndRemoveTask()
         }
