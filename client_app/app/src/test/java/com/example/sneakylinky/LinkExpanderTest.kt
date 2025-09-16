@@ -152,7 +152,7 @@ class LinkCheckerTest {
     // Invalid URL (no scheme, no host) → expect INVALID_URL error
     @Test
     fun absurdString_returnsInvalidUrlError() {
-        val absurd = "🚀:// white space\n"      // תווים אסורים + רווח + שורה חדשה
+        val absurd = "🚀:// white space\n"
         val result = LinkChecker.resolveUrl(absurd)
 
         assertTrue(result is UrlResolutionResult.Failure)

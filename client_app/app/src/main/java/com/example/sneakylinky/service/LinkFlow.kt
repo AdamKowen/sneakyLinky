@@ -1,4 +1,3 @@
-// comments in English only
 package com.example.sneakylinky.service
 
 import android.content.Context

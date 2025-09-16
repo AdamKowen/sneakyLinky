@@ -1,4 +1,3 @@
-// comments in English only
 package com.example.sneakylinky.util
 
 import android.Manifest
@@ -83,8 +82,8 @@ object UiNotices {
 
     private fun classify(msg: CharSequence): Pair<Boolean, Boolean> {
         val m = msg.toString()
-        val isChecking = m.startsWith("Checking", true) || m.startsWith("בודקים") || m.startsWith("בדיקה")
-        val isResult = m.startsWith("URL: ") || m.contains(" • Message: ") || m.startsWith("תוצאה")
+        val isChecking = m.startsWith("Checking", true) || m.startsWith("checking") || m.startsWith("check")
+        val isResult = m.startsWith("URL: ") || m.contains(" • Message: ") || m.startsWith("result")
         return isChecking to isResult
     }
 

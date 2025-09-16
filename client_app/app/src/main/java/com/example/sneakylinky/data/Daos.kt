@@ -177,7 +177,6 @@ interface LinkHistoryDao {
 
 
 
-    // comments in English only
     @Query("""
     SELECT * FROM link_history
     ORDER BY createdAt DESC

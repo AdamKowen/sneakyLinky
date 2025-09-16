@@ -76,7 +76,7 @@ class MyAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {}
 
-    // ---------- helpers below (unchanged logic, comments in English only) ----------
+    // ---------- helpers ----------
 
     private fun collectMessagesGeneric(root: AccessibilityNodeInfo): List<String> {
         val listContainer = findListContainer(root) ?: root

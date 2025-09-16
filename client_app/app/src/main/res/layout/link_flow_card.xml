@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- comments in English only -->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -61,7 +60,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:minHeight="36dp"
-                android:text="Check if the app is the defualt browser"
+                android:text="Check if the app is the default browser"
                 android:textSize="12sp"
                 app:iconPadding="8dp"
                 app:iconTint="@android:color/white" />

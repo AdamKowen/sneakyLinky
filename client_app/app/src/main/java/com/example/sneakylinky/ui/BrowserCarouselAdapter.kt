@@ -23,7 +23,6 @@ class BrowserCarouselAdapter(
 
     // Ensure a default is selected on first app start
     init {
-        // comments in English only
         if (selectedPackageName.isNullOrBlank() && browsers.isNotEmpty()) {
             val firstPkg = browsers.first().activityInfo.packageName
             saveSelectedBrowser(context, firstPkg)   // persist default

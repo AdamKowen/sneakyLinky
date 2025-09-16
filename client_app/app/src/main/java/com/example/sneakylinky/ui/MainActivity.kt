@@ -289,7 +289,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    // Hide IME and clear focus (comments in English only)
+    // Hide IME and clear focus
     private fun hideKeyboardAndClearFocus() {
         val view = currentFocus ?: window.decorView.rootView
         val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager

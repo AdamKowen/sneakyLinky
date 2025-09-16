@@ -65,7 +65,7 @@ class LinkRelayActivity : AppCompatActivity() {
         overridePendingTransition(0, 0) // ensure no exit animation
     }
 
-    // ---------------- helpers (English comments only) ----------------
+    // ---------------- helpers ----------------
 
     private fun pickMessageFromJoined(joined: String, raw: String): String? {
         // Normalize inputs

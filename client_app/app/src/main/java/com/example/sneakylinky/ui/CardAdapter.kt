@@ -123,7 +123,7 @@ class CardAdapter(private val context: Context,
                     onCheckUrl(raw)          // delegate to activity – no coroutines here
                 }
 
-                // in Card1ViewHolder binding (comments in English only)
+                //  Card1ViewHolder
                 holder.editText.apply {
                     setHorizontallyScrolling(true)
                     isHorizontalScrollBarEnabled = true
@@ -393,7 +393,6 @@ class CardAdapter(private val context: Context,
     }
 
 
-    // comments in English only
     private fun refreshHistoryInto(holder: Card3ViewHolder) {
         val ctx = holder.itemView.context
         SneakyLinkyApp.appScope.launch {

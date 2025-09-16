@@ -1,4 +1,3 @@
-// comments in English only
 package com.example.sneakylinky.ui
 
 import android.annotation.SuppressLint
@@ -188,7 +187,6 @@ class HistoryAdapter(
     override fun getItemCount() = items.size
 
     // Map DB state to icon + description + tint
-    // comments in English only
     private fun iconFor(history: com.example.sneakylinky.service.report.LinkHistory): Triple<Int, Int, String> {
         // if you use the breakdown map:
         val breakdown = com.example.sneakylinky.service.LinkFlow.remoteBreakdownFor(history.id)
@@ -241,7 +239,7 @@ class HistoryAdapter(
     }
 
 
-    // comments in English only
+
     private fun refreshHistoryInto(holder: CardAdapter.Card3ViewHolder) {
         val ctx = holder.itemView.context
         SneakyLinkyApp.appScope.launch {

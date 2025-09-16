@@ -38,7 +38,6 @@ class FlowCardBinder(
     // Views (lazy lookups)
     private val btnUpdateDb by lazy { root.findViewById<View>(R.id.btnUpdateDbNow) }
     private val btnSetDefault by lazy { root.findViewById<View>(R.id.btnSetDefault) }
-    // comments in English only
     private val switchCloudLinks by lazy { root.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchCloudLinks) }
     private val switchMsgCheck   by lazy { root.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchMsgCheck) }
 
@@ -250,7 +249,7 @@ class FlowCardBinder(
     }
 
 
-    // comments in English only
+
     private fun detachHotsetObserver() {
         hotsetListObserver?.let { obs ->
             hotsetLiveData?.removeObserver(obs)

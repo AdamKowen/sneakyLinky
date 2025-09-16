@@ -20,7 +20,7 @@ class HotsetRepository(private val context: Context) {
     private fun getLocalVersion(): Int = prefs.getInt("hotset_version", 0)
     private fun setLocalVersion(v: Int) = prefs.edit { putInt("hotset_version", v) }
 
-    // comments in English only
+
 // HotsetRepository.kt — add explicit logging
     suspend fun syncOnce(): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
