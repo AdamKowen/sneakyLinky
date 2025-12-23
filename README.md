@@ -1,7 +1,6 @@
 *A lightweight “background-check” for links & messages on Android.*  
 Set SneakyLinky as the device’s default browser once—from then on, every link you tap is quickly vetted. If it looks risky, you’ll see a *clear warning* with *Proceed / Block*. If it’s fine, SneakyLinky instantly hands it off to your real browser (Chrome, etc.) so your flow stays smooth.
 
-<img width="1024" height="1024" alt="IMG_0006" src="https://github.com/user-attachments/assets/e265b56f-4571-4162-91f8-eaf08e87bef1" />
 <img width="1024" height="1024" alt="sneakyPic" src="https://github.com/user-attachments/assets/bc2b2360-3474-428c-89e3-23cfd7945189" />
 
 
